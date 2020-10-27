@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 
+import 'AudioPlayerTask.dart';
 import 'SongList.dart';
 import 'ControlBar.dart';
 void main() => runApp(MyApp());
@@ -13,17 +15,33 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Saisei',
       theme: ThemeData(
-        primaryColor: Colors.blue,
-        accentColor: Colors.blueAccent,
+        primarySwatch: Colors.blue,
       ),
-      home: Player()
+      home: AudioServiceWidget(child: Player())
     );
   }
+}
+
+void _backgroundTaskEntrypoint() async {
+  AudioServiceBackground.run(() => AudioPlayerTask());
 }
 
 class Player extends StatefulWidget {
   @override
   _PlayerState createState() => _PlayerState();
+
+  // Implementation of 'of' for future reference
+  static _PlayerState of(BuildContext context) {
+    final _PlayerState navigator = context.findAncestorStateOfType<_PlayerState>();
+
+    assert(() {
+      if (navigator == null) {
+        throw new FlutterError('_PlayerState operation requested with a context that does not include a Player.');
+      }
+      return true;
+    }());
+    return navigator;
+  }
 }
 
 class _PlayerState extends State<Player> {
@@ -35,12 +53,18 @@ class _PlayerState extends State<Player> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    AudioService.start(
+      backgroundTaskEntrypoint: _backgroundTaskEntrypoint,
+      androidEnableQueue: true,
+      androidStopForegroundOnPause: true,
+    );
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
     super.dispose();
+    AudioService.stop();
     player.dispose();
   }
 
@@ -71,7 +95,8 @@ class _PlayerState extends State<Player> {
       }
       middle = (left + right) ~/ 2;
     }
-    _songs = _songs.getRange(0, middle + 1).toList();   
+    // TODO: commented out for emulator!!!!!!
+    //_songs = _songs.getRange(0, middle + 1).toList();
     print('Final size ${_songs.length}');
   }
 
@@ -84,7 +109,7 @@ class _PlayerState extends State<Player> {
           if (snapshot.hasData) {
             _songs = snapshot.data;
             sortSongList(new DateTime.utc(2016, 9, 1));
-            child = SongList(songs: _songs, player: player);
+            child = SongList(songs: _songs);
           } else {
             _message = 'Loading';
             if (snapshot.hasError) {
@@ -104,7 +129,7 @@ class _PlayerState extends State<Player> {
             ),
           );
       }),
-      ControlBar(songs: _songs, player: player)
+      ControlBar(),
     ]);
   }
 }

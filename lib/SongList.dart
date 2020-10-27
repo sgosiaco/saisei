@@ -1,13 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 
 class SongList extends StatelessWidget {
   final List<SongInfo> songs;
-  final AudioPlayer player;
-  SongList({@required this.songs, @required this.player});
+  SongList({@required this.songs});
 
   @override
   Widget build(BuildContext context) {
@@ -21,49 +19,48 @@ class SongList extends StatelessWidget {
         return Divider();
       }
       final index = idx ~/ 2;
-      return ListTile(
-        title: Text(
-          songs[index].title,
-          style: TextStyle(fontSize: 14.0),
-        ),
-        subtitle: Text(
-          '${songs[index].artist}',
-          style: TextStyle(fontSize: 12.0)
-        ),
-        onTap: () async {
-          if (player.playing) {
-            player.stop();
-          }
-          await player.load(ConcatenatingAudioSource(
-            children: songs
-              .getRange(index, songs.length - 1)
-              .map((e) => AudioSource.uri(Uri.parse(e.filePath), tag: e))
-              .toList()));
-          //await player.setFilePath(songs[index].filePath);
-          player.play();
-        },
-      );
+      return SongTile(songs: songs, index: index);
     });
   }
 }
 
 class SongTile extends StatelessWidget {
-  final SongInfo song;
-  final AudioPlayer player;
-  SongTile({@required this.song, @required this.player});
+  final List<SongInfo> songs;
+  final int index;
+  SongTile({@required this.songs, this.index});
 
   @override
   Widget build(BuildContext context) {
+    final SongInfo song = songs[index];
     return ListTile(
-      leading: Image.file(File(song.albumArtwork)),
-      title: Text(song.title),
-      subtitle: Text(song.artist),
+      title: Text(
+        song.title,
+        style: TextStyle(fontSize: 14.0),
+      ),
+      subtitle: Text(
+        '${song.artist}',
+        style: TextStyle(fontSize: 12.0)
+      ),
       onTap: () async {
-        if (player.playing) {
-          player.stop();
+        if (AudioService.playbackState.playing) {
+          AudioService.pause();
         }
-        await player.setFilePath(song.filePath);
-        player.play();
+        // need to load queue here!!!
+        AudioService.updateQueue(
+          songs
+            .getRange(index, songs.length)
+            .map((song) => 
+              MediaItem(
+                id: song.filePath,
+                album: song.album,
+                title: song.title,
+                artist: song.artist,
+                duration: Duration(milliseconds: int.parse(song.duration)),
+                artUri: song.albumArtwork == null ? null : Uri.file(song.albumArtwork, windows: false).toString()
+              )
+            ).toList()
+        );
+        AudioService.play();
       },
     );
   }

@@ -31,7 +31,11 @@ dependencies:
   flutter_audio_query: ^0.3.5+6
   audio_session:  ^0.0.9
   just_audio: ^0.5.5
-  audio_service: ^0.15.2
+  # audio_service: ^0.15.2
+  # getting latest git version instead to get positionStream!
+  audio_service:
+    git:
+      url: git://github.com/ryanheise/audio_service.git
 
 
 dev_dependencies:

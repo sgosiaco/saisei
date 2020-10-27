@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
+import 'main.dart';
 
 class ControlBar extends StatelessWidget {
-  final List<SongInfo> songs;
-  final AudioPlayer player;
-  ControlBar({@required this.songs, @required this.player});
-
   String convertDuration(Duration input) {
     if (input.inHours > 0) {
       return input.toString().split('.')[0];
@@ -19,12 +14,11 @@ class ControlBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       tileColor: Colors.blue,
-      title: StreamBuilder<SequenceState>(
-        stream: player.sequenceStateStream,
+      title: StreamBuilder<MediaItem>(
+        stream: AudioService.currentMediaItemStream,
         builder: (context, snapshot) {
-          final state = snapshot.data;
-          if (state?.sequence?.isEmpty ?? true) return Text('');
-          final metadata = state.currentSource.tag as SongInfo;
+          final metadata = snapshot.data;
+          if (metadata == null) return Text('');
           return Text(
             '${metadata.title}',
             style: TextStyle(color: Colors.white),
@@ -32,12 +26,12 @@ class ControlBar extends StatelessWidget {
           );
         },
       ),
-      subtitle: StreamBuilder<Duration>(
-        stream: player.durationStream,
+      subtitle: StreamBuilder<MediaItem>(
+        stream: AudioService.currentMediaItemStream,
         builder: (context, snapshot) {
-          final duration = snapshot.data ?? Duration.zero;
+          final duration = snapshot.data?.duration ?? Duration.zero;
           return StreamBuilder<Duration>(
-            stream: player.positionStream,
+            stream: AudioService.positionStream,
             builder: (context, snapshot) {
               var position = snapshot.data ?? Duration.zero;
               if (position > duration) {
@@ -51,15 +45,18 @@ class ControlBar extends StatelessWidget {
         },
       ),
       trailing: StreamBuilder<bool>(
-        stream: player.playingStream,
+        stream: AudioService.playbackStateStream.map((event) => event.playing).distinct(),
         builder: (context, snapshot) {
+          final playing = snapshot.data ?? false;
           return IconButton(
-            icon: snapshot.data ? Icon(Icons.pause) : Icon(Icons.play_arrow),
+            icon: playing ? Icon(Icons.pause) : Icon(Icons.play_arrow),
             onPressed: () async {
-              if (snapshot.data) {
-                await player.pause();
+              if (playing) {
+                //await player.pause();
+                await AudioService.pause();
               } else {
-                player.play();
+                //player.play();
+                AudioService.play();
               }
             },
           );
@@ -70,42 +67,45 @@ class ControlBar extends StatelessWidget {
 }
 
 class Controls extends StatelessWidget {
-  final AudioPlayer player;
-  Controls({@required this.player});
-
   @override
   Widget build(BuildContext context) {
-    return ButtonBar(
-      children: [
-        IconButton(
-          icon: Icon(Icons.skip_previous),
-          onPressed: () {
-            player.seekToPrevious();
-            if (!player.playing) {
-              player.play();
-            }
-          },
-        ),
-        IconButton(
-          icon: player.playing ? Icon(Icons.pause) : Icon(Icons.play_arrow),
-          onPressed: () async {
-            if (player.playing) {
-              await player.pause();
-            } else {
-              player.play();
-            }
-          },
-        ),
-        IconButton(
-          icon: Icon(Icons.skip_next),
-          onPressed: () {
-            player.seekToNext();
-            if (!player.playing) {
-              player.play();
-            }
-          },
-        )
-      ],
+    return StreamBuilder<PlaybackState>(
+      stream: AudioService.playbackStateStream,
+      builder: (context, snapshot) {
+        final playing = snapshot.data?.playing ?? false;
+        return ButtonBar(
+          children: [
+            IconButton(
+              icon: Icon(Icons.skip_previous),
+              onPressed: () {
+                AudioService.skipToPrevious();
+                if (playing) {
+                  AudioService.play();
+                }
+              },
+            ),
+            IconButton(
+              icon: playing ? Icon(Icons.pause) : Icon(Icons.play_arrow),
+              onPressed: () async {
+                if (playing) {
+                  await AudioService.pause();
+                } else {
+                  AudioService.play();
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.skip_next),
+              onPressed: () {
+                AudioService.skipToNext();
+                if (playing) {
+                  AudioService.play();
+                }
+              },
+            )
+          ],
+        );
+      }
     );
   }
 }
