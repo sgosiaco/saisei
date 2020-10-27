@@ -73,6 +73,7 @@ class Controls extends StatelessWidget {
       builder: (context, snapshot) {
         final playing = snapshot.data?.playing ?? false;
         return ButtonBar(
+          alignment: MainAxisAlignment.center,
           children: [
             IconButton(
               icon: Icon(Icons.skip_previous),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audio_service/audio_service.dart';
@@ -13,6 +12,11 @@ class AudioPlayerTask extends BackgroundAudioTask {
   StreamSubscription<PlaybackEvent> _eventSub;
 
   Future<void> _broadcastState() async {
+    const modes = {
+      LoopMode.all : AudioServiceRepeatMode.all,
+      LoopMode.one : AudioServiceRepeatMode.one,
+      LoopMode.off : AudioServiceRepeatMode.none,
+    };
     await AudioServiceBackground.setState(
       controls: [
         MediaControl.skipToPrevious,
@@ -28,7 +32,9 @@ class AudioPlayerTask extends BackgroundAudioTask {
       playing: _player.playing,
       position: _player.position,
       bufferedPosition: _player.bufferedPosition,
-      speed: _player.speed
+      speed: _player.speed,
+      shuffleMode: _player.shuffleModeEnabled ?? false ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
+      repeatMode: modes[_player.loopMode]
     );
   }
 
@@ -75,6 +81,9 @@ class AudioPlayerTask extends BackgroundAudioTask {
       }
     });
 
+    _player.setShuffleModeEnabled(false);
+    _player.setLoopMode(LoopMode.off);
+
     //await _player.setUrl('https://listen.moe/fallback');
     //_player.play();
   }
@@ -113,5 +122,28 @@ class AudioPlayerTask extends BackgroundAudioTask {
       children: queue.map((e) => AudioSource.uri(Uri.parse(e.id), tag: e)).toList()
     ));
     _player.play();
+    AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[0]);
+  }
+
+  @override
+  Future<void> onSetRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    const modes = {
+      AudioServiceRepeatMode.all : LoopMode.all,
+      AudioServiceRepeatMode.one : LoopMode.one,
+      AudioServiceRepeatMode.none : LoopMode.off,
+    };
+    await _player.setLoopMode(modes[repeatMode]);
+    _broadcastState();
+  }
+
+  @override
+  Future<void> onSetShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    
+    if (shuffleMode == AudioServiceShuffleMode.none) {
+      await _player.setShuffleModeEnabled(false);
+    } else {
+      await _player.setShuffleModeEnabled(true);
+    }
+    _broadcastState();
   }
 }

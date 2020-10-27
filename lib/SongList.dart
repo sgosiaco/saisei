@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
 
-import 'main.dart';
+import 'package:saisei/main.dart';
 
 class SongList extends StatelessWidget {
   final List<SongInfo> songs;
@@ -50,7 +50,6 @@ class SongTile extends StatelessWidget {
         if (AudioService.playbackState?.playing ?? false) {
           AudioService.pause();
         }
-        // need to load queue here!!!
         AudioService.updateQueue(
           songs
             .getRange(index, songs.length)
@@ -65,7 +64,6 @@ class SongTile extends StatelessWidget {
               )
             ).toList()
         );
-        AudioService.play();
       },
     );
   }

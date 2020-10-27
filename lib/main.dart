@@ -4,9 +4,9 @@ import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_service/audio_service.dart';
 
-import 'AudioPlayerTask.dart';
-import 'SongList.dart';
-import 'ControlBar.dart';
+import 'package:saisei/AudioPlayerTask.dart';
+import 'package:saisei/SongList.dart';
+import 'package:saisei/ControlSheet.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -74,10 +74,12 @@ class _PlayerState extends State<Player> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Saisei')), 
-      body: _buildPlayer()
-    );
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(title: Text('Saisei')), 
+        body: _buildPlayer(),
+        bottomSheet: ControlSheet() 
+    ));
   }
 
   void sortSongList(DateTime date) {
@@ -100,12 +102,12 @@ class _PlayerState extends State<Player> {
       middle = (left + right) ~/ 2;
     }
     // TODO: commented out for emulator!!!!!!
-    //_songs = _songs.getRange(0, middle + 1).toList();
+    _songs = _songs.getRange(0, middle + 1).toList();
     print('Final size ${_songs.length}');
   }
 
   Widget _buildPlayer() {
-    return Column(children: [
+    return Stack(children: [
       FutureBuilder(
         future: FlutterAudioQuery().getSongs(),
         builder: (BuildContext context, AsyncSnapshot<List<SongInfo>> snapshot) {
@@ -127,13 +129,12 @@ class _PlayerState extends State<Player> {
             );
           }
           return Container(
-            height: 526,
+            //height: 526,
             child: Scrollbar(
               child: child,
             ),
           );
       }),
-      ControlBar(),
     ]);
   }
 }
