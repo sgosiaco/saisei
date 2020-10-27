@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
 
+import 'main.dart';
+
 class SongList extends StatelessWidget {
   final List<SongInfo> songs;
   SongList({@required this.songs});
@@ -42,7 +44,10 @@ class SongTile extends StatelessWidget {
         style: TextStyle(fontSize: 12.0)
       ),
       onTap: () async {
-        if (AudioService.playbackState.playing) {
+        if (!AudioService.running) {
+          await Player.of(context).startAudioService();
+        }
+        if (AudioService.playbackState?.playing ?? false) {
           AudioService.pause();
         }
         // need to load queue here!!!

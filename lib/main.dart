@@ -49,15 +49,19 @@ class _PlayerState extends State<Player> {
   List<SongInfo> _songs;
   String _message = '';
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    AudioService.start(
+  Future<bool> startAudioService() {
+    return AudioService.start(
       backgroundTaskEntrypoint: _backgroundTaskEntrypoint,
       androidEnableQueue: true,
       androidStopForegroundOnPause: true,
     );
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    startAudioService();
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
-import 'main.dart';
 
 class ControlBar extends StatelessWidget {
   String convertDuration(Duration input) {
@@ -51,12 +50,12 @@ class ControlBar extends StatelessWidget {
           return IconButton(
             icon: playing ? Icon(Icons.pause) : Icon(Icons.play_arrow),
             onPressed: () async {
-              if (playing) {
-                //await player.pause();
-                await AudioService.pause();
-              } else {
-                //player.play();
-                AudioService.play();
+              if (AudioService.running) {
+                if (playing) {
+                  await AudioService.pause();
+                } else {
+                  AudioService.play();
+                }
               }
             },
           );

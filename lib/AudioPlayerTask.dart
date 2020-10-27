@@ -101,15 +101,17 @@ class AudioPlayerTask extends BackgroundAudioTask {
     if (newIndex == -1) return;
     _skipState = newIndex > _player.currentIndex ? AudioProcessingState.skippingToNext : AudioProcessingState.skippingToPrevious;
     _player.seek(Duration.zero, index: newIndex);
+    if (!_player.playing) {
+      _player.play();
+    }
   }
 
   @override
   Future<void> onUpdateQueue(List<MediaItem> queue) async {
     AudioServiceBackground.setQueue(queue);
     await _player.load(ConcatenatingAudioSource(
-            children: queue.map((e) => AudioSource.uri(Uri.parse(e.id), tag: e)).toList()
+      children: queue.map((e) => AudioSource.uri(Uri.parse(e.id), tag: e)).toList()
     ));
     _player.play();
-    return super.onUpdateQueue(queue);
   }
 }
