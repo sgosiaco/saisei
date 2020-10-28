@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
@@ -159,13 +160,59 @@ class SeekBar extends StatelessWidget {
             if (position > duration) {
               position = duration;
             }
-            return Text(
-              '${convertDuration(position)}/${convertDuration(duration)}', 
-              style: TextStyle(color: Colors.white),
+            return Column(
+              children: [
+                Seeker(position: position, duration: duration),
+                Text(
+                  '${convertDuration(position)}/${convertDuration(duration)}', 
+                  style: TextStyle(color: Colors.white),
+                )
+              ]
             );
           }
         );
       }
+    );
+  }
+}
+
+class Seeker extends StatefulWidget {
+  final Duration position;
+  final Duration duration;
+  //final ValueChanged<Duration> onChangeStart;
+  //final ValueChanged<Duration> onChanged;
+  //final ValueChanged<Duration> onChangeEnd;
+
+  Seeker({@required this.position, @required this.duration}); // @required this.onChangeStart, @required this.onChanged, @required this.onChangeEnd
+
+  @override
+  _SeekerState createState() => _SeekerState();
+}
+
+class _SeekerState extends State<Seeker> {
+  double _dragValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Slider(
+      activeColor: Colors.white,
+      value: min(_dragValue ??  widget.position.inMilliseconds.toDouble(),
+        widget.duration.inMilliseconds.toDouble()),
+      min: 0,
+      max: widget.duration.inMilliseconds.toDouble(),
+      divisions: null,
+      onChangeStart: (value) async {
+        await AudioService.pause();
+      },
+      onChanged: (value) {
+        setState(() {
+          _dragValue = value;
+        });
+      },
+      onChangeEnd: (value) async {
+        await AudioService.seekTo(Duration(milliseconds: value.toInt()));
+        AudioService.play();
+      },
     );
   }
 }
@@ -180,8 +227,8 @@ class BottomControls extends StatelessWidget {
         final shuffle = (snapshot?.data?.shuffleMode ?? AudioServiceShuffleMode.none) == AudioServiceShuffleMode.all;
         const icons = [
           Icon(Icons.repeat, color: Colors.white),
-          Icon(Icons.repeat, color: Colors.lightBlue,),
-          Icon(Icons.repeat_one, color: Colors.blueAccent)
+          Icon(Icons.repeat, color: Colors.grey,),
+          Icon(Icons.repeat_one, color: Colors.grey)
         ];
         const modes = [
           AudioServiceRepeatMode.none,

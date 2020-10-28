@@ -99,6 +99,17 @@ class AudioPlayerTask extends BackgroundAudioTask {
   }
 
   @override
+  Future<void> onSeekTo(Duration position) async {
+    final mediaItem = AudioServiceBackground.mediaItem;
+    if (mediaItem == null) return;
+    final queue = AudioServiceBackground.queue ?? [];
+    int i = queue.indexOf(mediaItem);
+    if (i == -1) return;
+    
+    _player.seek(position, index: i);
+  }
+
+  @override
   Future<void> onPlay() => _player.play();
 
   @override
