@@ -37,6 +37,8 @@ dependencies:
     git:
       url: git://github.com/ryanheise/audio_service.git
   animations: ^1.1.2
+  path_provider:  ^1.6.22
+  path: ^1.7.0
 
 
 dev_dependencies:
