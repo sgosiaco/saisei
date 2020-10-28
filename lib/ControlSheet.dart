@@ -160,15 +160,7 @@ class SeekBar extends StatelessWidget {
             if (position > duration) {
               position = duration;
             }
-            return Column(
-              children: [
-                Seeker(position: position, duration: duration),
-                Text(
-                  '${convertDuration(position)}/${convertDuration(duration)}', 
-                  style: TextStyle(color: Colors.white),
-                )
-              ]
-            );
+            return Seeker(position: position, duration: duration);
           }
         );
       }
@@ -191,28 +183,37 @@ class Seeker extends StatefulWidget {
 
 class _SeekerState extends State<Seeker> {
   double _dragValue;
+  double get _adjustedDrag => min(_dragValue ??  widget.position.inMilliseconds.toDouble(), widget.duration.inMilliseconds.toDouble());
 
   @override
   Widget build(BuildContext context) {
-    return Slider(
-      activeColor: Colors.white,
-      value: min(_dragValue ??  widget.position.inMilliseconds.toDouble(),
-        widget.duration.inMilliseconds.toDouble()),
-      min: 0,
-      max: widget.duration.inMilliseconds.toDouble(),
-      divisions: null,
-      onChangeStart: (value) async {
-        await AudioService.pause();
-      },
-      onChanged: (value) {
-        setState(() {
-          _dragValue = value;
-        });
-      },
-      onChangeEnd: (value) async {
-        await AudioService.seekTo(Duration(milliseconds: value.toInt()));
-        AudioService.play();
-      },
+    return Column(
+      children: [
+        Slider(
+          activeColor: Colors.white,
+          value: _adjustedDrag,
+          min: 0,
+          max: widget.duration.inMilliseconds.toDouble(),
+          divisions: null,
+          onChangeStart: (value) async {
+            await AudioService.pause();
+          },
+          onChanged: (value) {
+            setState(() {
+              _dragValue = value;
+            });
+          },
+          onChangeEnd: (value) async {
+            await AudioService.seekTo(Duration(milliseconds: value.toInt()));
+            AudioService.play();
+            _dragValue = null;
+          },
+        ),
+        Text(
+          '${convertDuration(Duration(milliseconds: _adjustedDrag.toInt()))}/${convertDuration(widget.duration)}', 
+          style: TextStyle(color: Colors.white),
+        )
+      ]
     );
   }
 }
