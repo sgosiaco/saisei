@@ -104,6 +104,37 @@ class AudioPlayerTask extends BackgroundAudioTask {
   @override
   Future<void> onPause() => _player.pause();
 
+  /*
+  @override
+  Future<void> onSkipToPrevious() {
+    if (_player.shuffleModeEnabled) {
+      if (_player.loopMode == LoopMode.all || _player.loopMode == LoopMode.off) {
+        _player.seekToNext();
+      }
+    } 
+    _skip(-1);
+  }
+
+  @override
+  Future<void> onSkipToNext() {
+
+    _skip(1);
+  }
+  */
+
+  // taken from audio_service.dart
+  Future<void> _skip(int offset) async {
+    final mediaItem = AudioServiceBackground.mediaItem;
+    if (mediaItem == null) return;
+    final queue = AudioServiceBackground.queue ?? [];
+    int i = queue.indexOf(mediaItem);
+    if (i == -1) return;
+    int newIndex = i + offset;
+    if (newIndex >= 0 && newIndex < queue.length)
+      await onSkipToQueueItem(queue[newIndex]?.id);
+  }
+
+
   @override
   Future<void> onSkipToQueueItem(String mediaId) async {
     final newIndex = AudioServiceBackground.queue.indexWhere((element) => element.id == mediaId);
@@ -132,17 +163,22 @@ class AudioPlayerTask extends BackgroundAudioTask {
       AudioServiceRepeatMode.one : LoopMode.one,
       AudioServiceRepeatMode.none : LoopMode.off,
     };
+    if (repeatMode == AudioServiceRepeatMode.one && _player.shuffleModeEnabled) {
+      await _player.setShuffleModeEnabled(false);
+    }
     await _player.setLoopMode(modes[repeatMode]);
     _broadcastState();
   }
 
   @override
   Future<void> onSetShuffleMode(AudioServiceShuffleMode shuffleMode) async {
-    
     if (shuffleMode == AudioServiceShuffleMode.none) {
       await _player.setShuffleModeEnabled(false);
     } else {
       await _player.setShuffleModeEnabled(true);
+      if (_player.loopMode == LoopMode.one) {
+        await _player.setLoopMode(LoopMode.off);
+      }
     }
     _broadcastState();
   }

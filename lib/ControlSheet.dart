@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
-import 'package:saisei/ControlBar.dart';
-
 import 'package:audio_service/audio_service.dart';
+import 'package:saisei/ControlBar.dart';
+import 'package:saisei/Utils.dart';
+import 'package:saisei/PlaylistSheet.dart';
+import 'package:saisei/SongList.dart';
 
 class ControlSheet extends StatefulWidget {
   @override
@@ -16,7 +18,7 @@ class _ControlSheetState extends State<ControlSheet>   {
   @override
   Widget build(BuildContext context) {
     return OpenContainer<bool>(
-      openColor: Colors.white,
+      openColor: Theme.of(context).primaryColor,
       closedShape: const RoundedRectangleBorder(),
       transitionType: _transitionType,
       openBuilder: (BuildContext context, VoidCallback _) {
@@ -40,7 +42,7 @@ class _ControlSheetState extends State<ControlSheet>   {
 
 class _ControlsClosed extends StatelessWidget {
   final VoidCallback openContainer;
-  const _ControlsClosed({this.openContainer}); 
+  const _ControlsClosed({@required this.openContainer}); 
 
   @override
   Widget build(BuildContext context) {
@@ -88,12 +90,57 @@ class ArtInfo extends StatelessWidget {
                   child: metadata?.artUri != null ? Center(child: Image.file(File.fromUri(Uri.parse(metadata.artUri)))) : SizedBox()
                 )
               ),
-              Text(metadata?.album ?? '', style: Theme.of(context).textTheme.headline6),
-              Text(metadata?.title ?? '')
+              Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize)), //Theme.of(context).textTheme.headline6
+              Text(metadata?.album ?? '', style: TextStyle(color: Colors.white))
             ]
           );
         }
       )
+    );
+  }
+}
+
+class Controls extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<PlaybackState>(
+      stream: AudioService.playbackStateStream,
+      builder: (context, snapshot) {
+        final playing = snapshot.data?.playing ?? false;
+        return ButtonBar(
+          alignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: Icon(Icons.skip_previous, color: Colors.white),
+              onPressed: () {
+                AudioService.skipToPrevious();
+                if (playing) {
+                  AudioService.play();
+                }
+              },
+            ),
+            IconButton(
+              icon: playing ? Icon(Icons.pause, color: Colors.white) : Icon(Icons.play_arrow, color: Colors.white),
+              onPressed: () async {
+                if (playing) {
+                  await AudioService.pause();
+                } else {
+                  AudioService.play();
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.skip_next, color: Colors.white),
+              onPressed: () {
+                AudioService.skipToNext();
+                if (playing) {
+                  AudioService.play();
+                }
+              },
+            )
+          ],
+        );
+      }
     );
   }
 }
@@ -112,7 +159,10 @@ class SeekBar extends StatelessWidget {
             if (position > duration) {
               position = duration;
             }
-            return Text('$position/$duration');
+            return Text(
+              '${convertDuration(position)}/${convertDuration(duration)}', 
+              style: TextStyle(color: Colors.white),
+            );
           }
         );
       }
@@ -129,9 +179,9 @@ class BottomControls extends StatelessWidget {
         final mode = snapshot?.data?.repeatMode ?? AudioServiceRepeatMode.none;
         final shuffle = (snapshot?.data?.shuffleMode ?? AudioServiceShuffleMode.none) == AudioServiceShuffleMode.all;
         const icons = [
-          Icon(Icons.repeat),
-          Icon(Icons.repeat, color: Colors.blue,),
-          Icon(Icons.repeat_one, color: Colors.blue)
+          Icon(Icons.repeat, color: Colors.white),
+          Icon(Icons.repeat, color: Colors.lightBlue,),
+          Icon(Icons.repeat_one, color: Colors.blueAccent)
         ];
         const modes = [
           AudioServiceRepeatMode.none,
@@ -149,14 +199,32 @@ class BottomControls extends StatelessWidget {
                 }
               },
             ),
-            Expanded(
-              child: Text(
-                'Playlist',
-                textAlign: TextAlign.center,
-              )
-            ),
             IconButton(
-              icon: shuffle ? Icon(Icons.shuffle, color: Colors.blue) : Icon(Icons.shuffle),
+              icon: Icon(Icons.list, color: Colors.white),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    final ScrollController controller = ScrollController();
+                    return Container(
+                      height: 500,
+                      child: Scrollbar(
+                        controller: controller,
+                        child: StreamBuilder<List<MediaItem>>(
+                          stream: AudioService.queueStream,
+                          builder: (context, snapshot) {
+                            final queue = snapshot.data ?? [];
+                            return SongList(songs: queue, controller: controller);
+                          }
+                        )
+                      )
+                    );
+                  }
+                );
+              },
+            ),//PlayListSheet()
+            IconButton(
+              icon: shuffle ? Icon(Icons.shuffle, color: Colors.grey) : Icon(Icons.shuffle, color: Colors.white),
               onPressed: () {
                 if (AudioService.running) {
                   if (shuffle) {

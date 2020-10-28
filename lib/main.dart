@@ -46,7 +46,7 @@ class Player extends StatefulWidget {
 
 class _PlayerState extends State<Player> {
   final player = AudioPlayer();
-  List<SongInfo> _songs;
+  List<MediaItem> _songs;
   String _message = '';
 
   Future<bool> startAudioService() {
@@ -82,16 +82,16 @@ class _PlayerState extends State<Player> {
     ));
   }
 
-  void sortSongList(DateTime date) {
+  void sortSongList(DateTime date) {    
     print('Starting reg sort');
     //_songs.sort((a,b) => int.parse(b.id).compareTo(int.parse(a.id))); // recently added hack
-    _songs.sort((a,b) => File(b.filePath).lastModifiedSync().compareTo(File(a.filePath).lastModifiedSync()));
+    _songs.sort((a,b) => File(b.id).lastModifiedSync().compareTo(File(a.id).lastModifiedSync()));
     var left = 0;
     var right = _songs.length - 1;
     var middle = (left + right) ~/ 2;
     print('Starting binary sort');
     while (right >= left) {
-      var songDate = File(_songs[middle].filePath).lastModifiedSync();
+      var songDate = File(_songs[middle].id).lastModifiedSync();
       if (songDate.isAfter(date)) {
         left = middle + 1;
       } else if (songDate.isBefore(date)) {
@@ -113,7 +113,26 @@ class _PlayerState extends State<Player> {
         builder: (BuildContext context, AsyncSnapshot<List<SongInfo>> snapshot) {
           Widget child;
           if (snapshot.hasData) {
-            _songs = snapshot.data;
+            _songs = snapshot.data.map((song) => MediaItem(
+                id: song.filePath,
+                album: song.album,
+                title: song.title,
+                artist: song.artist,
+                genre: '',
+                duration: Duration(milliseconds: int.parse(song.duration)),
+                artUri: song.albumArtwork == null ? null : Uri.file(song.albumArtwork, windows: false).toString(),
+                rating: Rating.newHeartRating(false),
+                extras: {
+                  'albumId' : song.albumId,
+                  'artistId' : song.artistId,
+                  'composer' : song.composer,
+                  'fileSize' : song.fileSize,
+                  'track' : song.track,
+                  'uri' : song.uri,
+                  'year' : song.year,
+                }
+              )
+            ).toList();
             sortSongList(new DateTime.utc(2016, 9, 1));
             child = SongList(songs: _songs);
           } else {

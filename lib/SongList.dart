@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
 
 import 'package:saisei/main.dart';
 
 class SongList extends StatelessWidget {
-  final List<SongInfo> songs;
-  SongList({@required this.songs});
+  final List<MediaItem> songs;
+  final ScrollController controller;
+  SongList({@required this.songs, this.controller});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      controller: controller,
       shrinkWrap: true,
       scrollDirection: Axis.vertical,
       padding: EdgeInsets.all(10),
@@ -21,19 +22,20 @@ class SongList extends StatelessWidget {
         return Divider();
       }
       final index = idx ~/ 2;
-      return SongTile(songs: songs, index: index);
+      return SongTile(songs: songs, index: index, controller: controller);
     });
   }
 }
 
 class SongTile extends StatelessWidget {
-  final List<SongInfo> songs;
+  final List<MediaItem> songs;
   final int index;
-  SongTile({@required this.songs, this.index});
+  final ScrollController controller;
+  SongTile({@required this.songs, @required this.index, this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final SongInfo song = songs[index];
+    final MediaItem song = songs[index];
     return ListTile(
       title: Text(
         song.title,
@@ -50,20 +52,8 @@ class SongTile extends StatelessWidget {
         if (AudioService.playbackState?.playing ?? false) {
           AudioService.pause();
         }
-        AudioService.updateQueue(
-          songs
-            .getRange(index, songs.length)
-            .map((song) => 
-              MediaItem(
-                id: song.filePath,
-                album: song.album,
-                title: song.title,
-                artist: song.artist,
-                duration: Duration(milliseconds: int.parse(song.duration)),
-                artUri: song.albumArtwork == null ? null : Uri.file(song.albumArtwork, windows: false).toString()
-              )
-            ).toList()
-        );
+        AudioService.updateQueue(songs.getRange(index, songs.length).toList());
+        controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
       },
     );
   }
