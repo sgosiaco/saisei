@@ -64,8 +64,8 @@ class _ControlsOpened extends StatelessWidget {
       child: Column(
         children: [
           ArtInfo(),
-          Controls(),
           SeekBar(),
+          Controls(),
           SizedBox(height: 8.0),
           BottomControls()
         ]
@@ -91,8 +91,8 @@ class ArtInfo extends StatelessWidget {
                   child: metadata?.artUri != null ? Center(child: Image.file(File.fromUri(Uri.parse(metadata.artUri)))) : SizedBox()
                 )
               ),
-              Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize)), //Theme.of(context).textTheme.headline6
-              Text(metadata?.album ?? '', style: TextStyle(color: Colors.white))
+              Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.all(10)), //Theme.of(context).textTheme.headline6
+              Container(child: Text(metadata?.album ?? '', style: TextStyle(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center), padding: EdgeInsets.fromLTRB(10, 0, 10, 10))
             ]
           );
         }
@@ -108,11 +108,12 @@ class Controls extends StatelessWidget {
       stream: AudioService.playbackStateStream,
       builder: (context, snapshot) {
         final playing = snapshot.data?.playing ?? false;
-        return ButtonBar(
-          alignment: MainAxisAlignment.center,
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
               icon: Icon(Icons.skip_previous, color: Colors.white),
+              iconSize: 50,
               onPressed: () {
                 AudioService.skipToPrevious();
                 if (playing) {
@@ -122,6 +123,7 @@ class Controls extends StatelessWidget {
             ),
             IconButton(
               icon: playing ? Icon(Icons.pause, color: Colors.white) : Icon(Icons.play_arrow, color: Colors.white),
+              iconSize: 50,
               onPressed: () async {
                 if (playing) {
                   await AudioService.pause();
@@ -132,6 +134,7 @@ class Controls extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(Icons.skip_next, color: Colors.white),
+              iconSize: 50,
               onPressed: () {
                 AudioService.skipToNext();
                 if (playing) {
@@ -210,9 +213,24 @@ class _SeekerState extends State<Seeker> {
             _dragValue = null;
           },
         ),
-        Text(
-          '${convertDuration(Duration(milliseconds: _adjustedDrag.toInt()))}/${convertDuration(widget.duration)}', 
-          style: TextStyle(color: Colors.white),
+        Row(
+          children: [
+            Container(
+              padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Text(
+                '${convertDuration(Duration(milliseconds: _adjustedDrag.toInt()))}', 
+                style: TextStyle(color: Colors.white),
+              )
+            ),
+            Expanded(child: Container()),
+            Container(
+              padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Text(
+                '${convertDuration(widget.duration)}', 
+                style: TextStyle(color: Colors.white),
+                ),
+            )
+          ]
         )
       ]
     );
@@ -248,29 +266,31 @@ class BottomControls extends StatelessWidget {
                 }
               },
             ),
-            IconButton(
-              icon: Icon(Icons.list, color: Colors.white),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    final ScrollController controller = ScrollController();
-                    return Container(
-                      height: 500,
-                      child: Scrollbar(
-                        controller: controller,
-                        child: StreamBuilder<List<MediaItem>>(
-                          stream: AudioService.queueStream,
-                          builder: (context, snapshot) {
-                            final queue = snapshot.data ?? [];
-                            return SongList(songs: queue, controller: controller);
-                          }
+            Expanded(
+              child: IconButton(
+                icon: Icon(Icons.list, color: Colors.white),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context, 
+                    builder: (context) {
+                      final ScrollController controller = ScrollController();
+                      return Container(
+                        height: 500,
+                        child: Scrollbar(
+                          controller: controller,
+                          child: StreamBuilder<List<MediaItem>>(
+                            stream: AudioService.queueStream,
+                            builder: (context, snapshot) {
+                              final queue = snapshot.data ?? [];
+                              return SongList(songs: queue, controller: controller);
+                            }
+                          )
                         )
-                      )
-                    );
-                  }
-                );
-              },
+                      );
+                    }
+                  );
+                },
+              )
             ),//PlayListSheet()
             IconButton(
               icon: shuffle ? Icon(Icons.shuffle, color: Colors.grey) : Icon(Icons.shuffle, color: Colors.white),

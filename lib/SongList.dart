@@ -52,7 +52,9 @@ class SongTile extends StatelessWidget {
         if (AudioService.playbackState?.playing ?? false) {
           AudioService.pause();
         }
-        AudioService.updateQueue(songs.getRange(index, songs.length).toList());
+        //AudioService.skipToQueueItem(songs[index].id);
+        //AudioService.customAction(name)
+        AudioService.updateQueue(songs.getRange(index, songs.length).toList()); // songs.getRange(index, songs.length).toList()
         controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
       },
     );

@@ -7,15 +7,17 @@ class ControlBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       tileColor: Colors.blue,
+      isThreeLine: false,
       title: StreamBuilder<MediaItem>(
         stream: AudioService.currentMediaItemStream,
         builder: (context, snapshot) {
           final metadata = snapshot.data;
           if (metadata == null) return Text('');
           return Text(
-            '${metadata.title}',
-            style: TextStyle(color: Colors.white),
+            metadata.title,
+            style: TextStyle(color: Colors.white,),
             maxLines: 1,
+            overflow: TextOverflow.ellipsis
           );
         },
       ),
@@ -23,6 +25,7 @@ class ControlBar extends StatelessWidget {
         stream: AudioService.currentMediaItemStream,
         builder: (context, snapshot) {
           final duration = snapshot.data?.duration ?? Duration.zero;
+          final artist = snapshot.data?.artist ?? '';
           return StreamBuilder<Duration>(
             stream: AudioService.positionStream,
             builder: (context, snapshot) {
@@ -31,8 +34,10 @@ class ControlBar extends StatelessWidget {
                 position = duration;
               }
               return Text(
-                '${convertDuration(position)}/${convertDuration(duration)}',
+                artist,
                 style: TextStyle(color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               );
           });
         },
