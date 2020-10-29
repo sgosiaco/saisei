@@ -10,7 +10,7 @@ class ControlBar extends StatelessWidget {
         StreamBuilder<MediaItem>(
           stream: AudioService.currentMediaItemStream,
           builder: (context, snapshot) {
-            final duration = snapshot.data?.duration ?? Duration.zero;
+            final duration = snapshot.data?.duration ?? Duration(seconds: 1); // Duration.zero
             return StreamBuilder<Duration>(
               stream: AudioService.positionStream,
               builder: (context, snapshot) {

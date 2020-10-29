@@ -5,7 +5,6 @@ import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:saisei/ControlBar.dart';
 import 'package:saisei/Utils.dart';
-import 'package:saisei/PlaylistSheet.dart';
 import 'package:saisei/SongList.dart';
 
 class ControlSheet extends StatefulWidget {
@@ -83,12 +82,25 @@ class ArtInfo extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot == null) return SizedBox();
           final metadata = snapshot.data;
+          Image image =  Image(image: AssetImage('assets/default.jpg'));
+          if (metadata?.artUri != null) {
+            try {
+              File file = File.fromUri(Uri.parse(metadata.artUri));
+              if (file.existsSync()) {
+                image = Image.file(file);
+              } else {
+                print('ART DOESNT EXIST');
+              }
+            } catch (e) {
+              print('COULDNT OPEN ART');
+            }
+          }
           return Column(
             children: [
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: metadata?.artUri != null ? Center(child: Image.file(File.fromUri(Uri.parse(metadata.artUri)))) : SizedBox()
+                  child: Center(child: image) // Center(child: AspectRatio(aspectRatio: 1, child: Container(color: Colors.grey,)))
                 )
               ),
               Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.all(10)), //Theme.of(context).textTheme.headline6

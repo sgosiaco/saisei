@@ -75,11 +75,34 @@ class _PlayerState extends State<Player> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(title: Text('Saisei')), 
-        body: _buildPlayer(),
-        bottomSheet: ControlSheet() 
-    ));
+      child: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            flexibleSpace: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TabBar(
+                  tabs: [
+                    Tab(text: 'Songs'),
+                    Tab(text: 'Artists'),
+                    Tab(text: 'Playlists')
+                  ],
+                ),
+              ],
+            )
+          ), 
+          body: TabBarView(
+            children: [
+              _buildPlayer(),
+              Text('Artist'),
+              SongList(songs: AudioService.queue ?? [])
+            ],
+          ),
+          bottomSheet: ControlSheet() 
+        )
+      )
+    );
   }
 
   Widget _buildPlayer() {
