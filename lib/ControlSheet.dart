@@ -50,7 +50,7 @@ class _ControlsClosed extends StatelessWidget {
     return InkWell(
       onTap: openContainer,
       child: Container(
-        height: 70,
+        height: 76,
         child: ControlBar(),
       ),
     );
