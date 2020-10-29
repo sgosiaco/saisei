@@ -191,6 +191,7 @@ class _SeekerState extends State<Seeker> {
       children: [
         Slider(
           activeColor: Colors.white,
+          inactiveColor: Colors.white,
           value: _adjustedDrag,
           min: 0,
           max: widget.duration.inMilliseconds.toDouble(),

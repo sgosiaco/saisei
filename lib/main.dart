@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:saisei/AudioPlayerTask.dart';
 import 'package:saisei/SongList.dart';
 import 'package:saisei/ControlSheet.dart';
+import 'package:saisei/Utils.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
@@ -54,18 +55,10 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   final player = AudioPlayer();
   List<MediaItem> _songs;
-
-  Future<bool> startAudioService() {
-    return AudioService.start(
-      backgroundTaskEntrypoint: _backgroundTaskEntrypoint,
-      androidEnableQueue: true,
-      androidStopForegroundOnPause: true,
-    );
-  }
+  Isolate _loader;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     startAudioService();
     loadSongs();
@@ -73,10 +66,10 @@ class _PlayerState extends State<Player> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     AudioService.stop();
     player.dispose();
+    _loader.kill();
   }
 
   @override
@@ -98,53 +91,55 @@ class _PlayerState extends State<Player> {
     });
   }
 
+  Future<bool> startAudioService() {
+    return AudioService.start(
+      backgroundTaskEntrypoint: _backgroundTaskEntrypoint,
+      androidEnableQueue: true,
+      androidStopForegroundOnPause: true,
+    );
+  }
+
   Future<void> loadSongs() async {
     // check if local history exists and load it
     final dir = await getApplicationDocumentsDirectory();
-    print(dir);
-    final songFile = File(p.join(dir.path, 'songs.json'));
-    List<MediaItem> songsJson;
-    if (await songFile.exists()) {
-      print('FILE EXISTS');
-      songsJson = (jsonDecode(await songFile.readAsString()) as List).map((song) => MediaItem.fromJson(song)).toList();
-      setState(() {
-        _songs = songsJson;
-      });
-    } 
+    final path = p.join(dir.path, 'songs.json');
+    final songFile = File(path);
+    List songsJson = [];
+    List<MediaItem> songsHistory = [];
+    try {
+      if (await songFile.exists()) {
+        print('FILE EXISTS');
+        songsJson = jsonDecode(await songFile.readAsString()) as List;
+        songsHistory = songsJson.map<MediaItem>((song) => MediaItem.fromJson(song)).toList();
+        setState(() {
+          _songs = songsHistory;
+        });
+      } 
+    } catch (e) {
+    }
 
-    // task first isolate with getting list
+    // task first isolate with processing list
     ReceivePort receivePort = ReceivePort();
-    await Isolate.spawn(songLoader, receivePort.sendPort);
+    if (_loader == null) {
+      _loader = await Isolate.spawn(songLoader, receivePort.sendPort);
+    }
     SendPort sendPort = await receivePort.first;
     
     final songsInfo = await FlutterAudioQuery().getSongs();
-    final songSerialized = songsInfo.map((song) => {
-      'id': song.filePath,
-      'album': song.album,
-      'title':  song.title,
-      'artist': song.artist,
-      'duration': song.duration,
-      'artUri': song.albumArtwork,
-      'albumId': song.albumId,
-      'artistId': song.artistId,
-      'composer': song.composer,
-      'fileSize': song.fileSize,
-      'track': song.track,
-      'uri': song.uri,
-      'year': song.year
-    }).toList();
+    final songSerialized = songsInfo.map<Map<String, dynamic>>((song) => song.toMap()).toList();
 
-    List<Map<String, dynamic>> msg = await sendReceive(sendPort, songSerialized);
-    final current = msg.map((e) => MediaItem.fromJson(e)).toList();
+    Map<String, dynamic> msg = await sendReceive(sendPort, {'history': songsJson, 'current': songSerialized, 'path': path});
+    final current = (msg['songs'] as List<Map<String, dynamic>>).map<MediaItem>((e) => MediaItem.fromJson(e)).toList();
+    final equal = msg['equal'] as bool;
 
-    setState(() {
-      _songs = current;
-    });
-
-    if (!await songFile.exists() || !listEquals(songsJson, current)) {
-      print('WRITING FILE');
-      songFile.writeAsString(jsonEncode(msg));
+    // if current list is not the same as the history then load current into state
+    if (!equal) {
+      print('not equal');
+      setState(() {
+        _songs = current;
+      });
     }
+    //can't kill loader here b/c file still writing
   }
 
   static Future<void> songLoader(SendPort sendPort) async {
@@ -154,28 +149,16 @@ class _PlayerState extends State<Player> {
     await for (var msg in port) {
       print('ISOLATE RECEIVED');
       SendPort replyTo = msg[1];
-      final songsMedia = (msg[0] as List<Map<String, dynamic>>).map((song) => MediaItem(
-                  id: song['id'],
-                  album: song['album'],
-                  title: song['title'],
-                  artist: song['artist'],
-                  genre: '',
-                  duration: Duration(milliseconds: int.parse(song['duration'])),
-                  artUri: song['artUri'] == null ? null : Uri.file(song['artUri'], windows: false).toString(),
-                  rating: Rating.newHeartRating(false),
-                  extras: {
-                    'albumId' : song['albumId'],
-                    'artistId' : song['artistId'],
-                    'composer' : song['composer'],
-                    'fileSize' : song['fileSize'],
-                    'track' : song['track'],
-                    'uri' : song['uri'],
-                    'year' : song['year'],
-                  }
-                ).toJson()
-              ).toList();
+      final songsMedia = (msg[0]['current'] as List<Map<String, dynamic>>).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
+      final songsHistory = (msg[0]['history'] as List);
       songsMedia.sort((a,b) => File(b['id']).lastModifiedSync().compareTo(File(a['id']).lastModifiedSync()));
-      replyTo.send(songsMedia);
+      final equal = songsMedia.toString() == songsHistory.toString();
+      replyTo.send({'songs': songsMedia, 'equal': equal});
+      final songFile = File(msg[0]['path']);
+      if (!equal || !await songFile.exists()) {
+        print('WRITING FILE');
+        songFile.writeAsString(jsonEncode(songsMedia));
+      }
     }
   }
 
@@ -183,26 +166,5 @@ class _PlayerState extends State<Player> {
     ReceivePort response = ReceivePort();
     port.send([msg, response.sendPort]);
     return response.first;
-  }
-
-  List<MediaItem> recentSongList(DateTime date) {        
-    var left = 0;
-    var right = _songs.length - 1;
-    var middle = (left + right) ~/ 2;
-    print('Starting binary sort');
-    while (right >= left) {
-      var songDate = File(_songs[middle].id).lastModifiedSync();
-      if (songDate.isAfter(date)) {
-        left = middle + 1;
-      } else if (songDate.isBefore(date)) {
-        right = middle - 1;
-      } else {
-        break;
-      }
-      middle = (left + right) ~/ 2;
-    }
-    print('Final size ${_songs.length}');
-    return _songs.getRange(0, middle + 1).toList();
-    
   }
 }
