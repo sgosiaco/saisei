@@ -30,7 +30,13 @@ dependencies:
   cupertino_icons: ^1.0.0
   flutter_audio_query: ^0.3.5+6
   audio_session:  ^0.0.9
-  just_audio: ^0.5.5
+  # ^0.5.5
+  # using personal version instead for looping
+  just_audio: 
+    path: ../just_audio/just_audio/
+  #  git:
+  #    url: https://github.com/sgosiaco/just_audio.git
+  #    path: just_audio/just_audio/
   # audio_service: ^0.15.2
   # getting latest git version instead to get positionStream!
   audio_service:
@@ -39,6 +45,7 @@ dependencies:
   animations: ^1.1.2
   path_provider:  ^1.6.22
   path: ^1.7.0
+  web_socket_channel: ^1.1.0
 
 
 dev_dependencies:

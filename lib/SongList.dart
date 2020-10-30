@@ -7,7 +7,8 @@ import 'package:saisei/main.dart';
 class SongList extends StatelessWidget {
   final List<MediaItem> songs;
   final ScrollController controller;
-  SongList({@required this.songs, this.controller});
+  final List<int> shuffleIndices;
+  SongList({@required this.songs, this.controller, this.shuffleIndices});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,10 @@ class SongList extends StatelessWidget {
       if (idx.isOdd) {
         return Divider();
       }
-      final index = idx ~/ 2;
+      var index = idx ~/ 2;
+      if (shuffleIndices != null) {
+        index = shuffleIndices[index];
+      }
       return SongTile(songs: songs, index: index, controller: controller);
     });
   }

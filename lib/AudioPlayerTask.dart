@@ -9,9 +9,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
   final _player = AudioPlayer();
   final _completer = Completer();
   AudioProcessingState _skipState;
-  List<ProgressiveAudioSource> _shuffle;
+  List<int> shuffleIndices;
   StreamSubscription<PlaybackEvent> _eventSub;
-  List<MediaItem> _played = [];
 
   Future<void> _broadcastState() async {
     const modes = {
@@ -35,7 +34,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
       position: _player.position,
       bufferedPosition: _player.bufferedPosition,
       speed: _player.speed,
-      shuffleMode: _player.shuffleModeEnabled ?? false ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none, // (_shuffle?.length ?? 0) > 0
+      shuffleMode: _player.shuffleModeEnabled ?? false ? AudioServiceShuffleMode.all : AudioServiceShuffleMode.none,
       repeatMode: modes[_player.loopMode]
     );
   }
@@ -69,9 +68,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
     _player.sequenceStream.listen((sequence) {
       if (sequence != null) {
-        AudioServiceBackground.setQueue(sequence.map<MediaItem>((item) => item.tag).toList());
+        AudioServiceBackground.setQueue(sequence.map<MediaItem>((item) => item.tag).toList() ?? []);
         AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[0]);
-        _played.clear();
         print('SEQUENCE ${sequence.map<String>((item) => (item.tag as MediaItem).title)}');
       }
     });
@@ -79,7 +77,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     _player.currentIndexStream.listen((index) {
       if (index != null) {
         AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[index]);
-        _played.add(AudioServiceBackground.queue[index]);
+        print('PLAYING SONG $index ${AudioServiceBackground.queue[index].title}');
       }
     });
 
@@ -95,9 +93,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
     _player.setShuffleModeEnabled(false);
     _player.setLoopMode(LoopMode.off);
-
-    //await _player.setUrl('https://listen.moe/fallback');
-    //_player.play();
   }
 
   @override
@@ -129,7 +124,19 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
   @override
   Future<void> onSkipToPrevious() async {
-    _player.seekToPrevious();
+    if(_player.loopMode == LoopMode.one) {
+      _player.seek(Duration.zero);
+    } else {
+      if(_player.shuffleModeEnabled) {
+        int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) - 1;
+        if (shuffleIndex < 0) {
+          shuffleIndex = 0;
+        }
+        _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
+      } else {
+        _player.seekToPrevious();
+      }
+    }
   }
 
   @override
@@ -156,7 +163,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     //AudioServiceBackground.setQueue(queue);
     var shuffling = false;
     if (_player.shuffleModeEnabled) {
-      await _player.setShuffleModeEnabled(false);
+      await onSetShuffleMode(AudioServiceShuffleMode.none);
       shuffling = true;
     }
     await _player.load(ConcatenatingAudioSource(
@@ -164,7 +171,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     ));
     _player.play();
     if(shuffling) {
-      await _player.setShuffleModeEnabled(true);
+      await onSetShuffleMode(AudioServiceShuffleMode.all);
     }
     //AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[0]);
   }
@@ -185,24 +192,34 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
   @override
   Future<void> onSetShuffleMode(AudioServiceShuffleMode shuffleMode) async {
-    /*
-    if (_shuffle == null) {
-      _shuffle = List.from(_player.sequence);
-      _player.sequence.shuffle();
-      _player.load(ConcatenatingAudioSource(children: _player.sequence));
-    } else {
-      _player.load(ConcatenatingAudioSource(children: _shuffle));
-      _shuffle = null;
-    }
-    */
     if (shuffleMode == AudioServiceShuffleMode.none) {
       await _player.setShuffleModeEnabled(false);
     } else {
-      await _player.setShuffleModeEnabled(true);
+      shuffleIndices = await _player.setShuffleModeEnabled(true);
+      print(shuffleIndices);
       if (_player.loopMode == LoopMode.one) {
         await _player.setLoopMode(LoopMode.off);
       }
     }
     _broadcastState();
+  }
+
+  @override
+  Future onCustomAction(String name, arguments) async {
+    switch(name) {
+      case 'url':
+        if (_player.playing) {
+          _player.pause();
+        }
+        _player.setUrl(arguments);
+        _player.play();
+        break;
+      case 'shuffle':
+        if (_player.shuffleModeEnabled) {
+          return shuffleIndices;
+        }
+        return null;
+      default:
+    }
   }
 }

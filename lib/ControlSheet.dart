@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:saisei/main.dart';
 import 'package:saisei/ControlBar.dart';
 import 'package:saisei/Utils.dart';
 import 'package:saisei/SongList.dart';
@@ -293,8 +295,18 @@ class BottomControls extends StatelessWidget {
                           child: StreamBuilder<List<MediaItem>>(
                             stream: AudioService.queueStream,
                             builder: (context, snapshot) {
-                              final queue = snapshot.data ?? [];
-                              return SongList(songs: queue, controller: controller);
+                              var queue = snapshot.data ?? [];
+                              return FutureBuilder(
+                                future: AudioService.customAction('shuffle'),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return SongList(songs: queue, controller: controller, shuffleIndices: snapshot.data);
+                                  } else {
+                                    return SongList(songs: queue, controller: controller);
+                                    //return Center(child: CircularProgressIndicator());
+                                  }
+                                }
+                              );
                             }
                           )
                         )

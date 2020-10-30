@@ -12,6 +12,7 @@ import 'package:saisei/AudioPlayerTask.dart';
 import 'package:saisei/SongList.dart';
 import 'package:saisei/ControlSheet.dart';
 import 'package:saisei/Utils.dart';
+import 'package:saisei/RadioPlayer.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
@@ -85,7 +86,7 @@ class _PlayerState extends State<Player> {
                 TabBar(
                   tabs: [
                     Tab(text: 'Songs'),
-                    Tab(text: 'Artists'),
+                    Tab(text: 'Radio'),
                     Tab(text: 'Playlists')
                   ],
                 ),
@@ -95,7 +96,7 @@ class _PlayerState extends State<Player> {
           body: TabBarView(
             children: [
               _buildPlayer(),
-              Text('Artist'),
+              RadioPlayer(),
               SongList(songs: AudioService.queue ?? [])
             ],
           ),
