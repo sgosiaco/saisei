@@ -1,6 +1,14 @@
 import 'dart:io';
+import 'dart:developer' as dev;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
+
+void log(String message, {String name = '', Object error}) {
+  if (kDebugMode) {
+    dev.log(message, name: 'io.github.sgosiaco.saisei$name', error: error);
+  }
+}
 
 String convertDuration(Duration input) {
   if (input.inHours > 0) {

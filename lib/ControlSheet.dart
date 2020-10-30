@@ -3,11 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:saisei/main.dart';
 import 'package:saisei/ControlBar.dart';
-import 'package:saisei/Utils.dart';
 import 'package:saisei/SongList.dart';
+import 'package:saisei/Utils.dart';
 
 class ControlSheet extends StatefulWidget {
   @override
@@ -91,10 +89,10 @@ class ArtInfo extends StatelessWidget {
               if (file.existsSync()) {
                 image = Image.file(file);
               } else {
-                print('ART DOESNT EXIST');
+                log('ART DOESNT EXIST');
               }
             } catch (e) {
-              print('COULDNT OPEN ART');
+              log('COULDNT OPEN ART');
             }
           }
           return Column(
@@ -102,7 +100,7 @@ class ArtInfo extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Center(child: image) // Center(child: AspectRatio(aspectRatio: 1, child: Container(color: Colors.grey,)))
+                  child: Center(child: image)
                 )
               ),
               Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.all(10)), //Theme.of(context).textTheme.headline6
@@ -188,11 +186,8 @@ class SeekBar extends StatelessWidget {
 class Seeker extends StatefulWidget {
   final Duration position;
   final Duration duration;
-  //final ValueChanged<Duration> onChangeStart;
-  //final ValueChanged<Duration> onChanged;
-  //final ValueChanged<Duration> onChangeEnd;
 
-  Seeker({@required this.position, @required this.duration}); // @required this.onChangeStart, @required this.onChanged, @required this.onChangeEnd
+  Seeker({@required this.position, @required this.duration});
 
   @override
   _SeekerState createState() => _SeekerState();
@@ -303,7 +298,6 @@ class BottomControls extends StatelessWidget {
                                     return SongList(songs: queue, controller: controller, shuffleIndices: snapshot.data);
                                   } else {
                                     return SongList(songs: queue, controller: controller);
-                                    //return Center(child: CircularProgressIndicator());
                                   }
                                 }
                               );
@@ -315,7 +309,7 @@ class BottomControls extends StatelessWidget {
                   );
                 },
               )
-            ),//PlayListSheet()
+            ),
             IconButton(
               icon: shuffle ? Icon(Icons.shuffle, color: Colors.grey) : Icon(Icons.shuffle, color: Colors.white),
               onPressed: () {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:saisei/Utils.dart';
 
 
 class AudioPlayerTask extends BackgroundAudioTask {
@@ -70,14 +71,14 @@ class AudioPlayerTask extends BackgroundAudioTask {
       if (sequence != null) {
         AudioServiceBackground.setQueue(sequence.map<MediaItem>((item) => item.tag).toList() ?? []);
         AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[0]);
-        print('SEQUENCE ${sequence.map<String>((item) => (item.tag as MediaItem).title)}');
+        log('SEQUENCE ${sequence.map<String>((item) => (item.tag as MediaItem).title)}');
       }
     });
 
     _player.currentIndexStream.listen((index) {
       if (index != null) {
         AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[index]);
-        print('PLAYING SONG $index ${AudioServiceBackground.queue[index].title}');
+        log('PLAYING SONG $index ${AudioServiceBackground.queue[index].title}');
       }
     });
 
@@ -196,7 +197,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
       await _player.setShuffleModeEnabled(false);
     } else {
       shuffleIndices = await _player.setShuffleModeEnabled(true);
-      print(shuffleIndices);
       if (_player.loopMode == LoopMode.one) {
         await _player.setLoopMode(LoopMode.off);
       }

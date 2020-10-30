@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:saisei/Utils.dart';
 
 class ControlBar extends StatelessWidget {
   @override
@@ -10,7 +9,7 @@ class ControlBar extends StatelessWidget {
         StreamBuilder<MediaItem>(
           stream: AudioService.currentMediaItemStream,
           builder: (context, snapshot) {
-            final duration = snapshot.data?.duration ?? Duration(seconds: 1); // Duration.zero
+            final duration = snapshot.data?.duration ?? Duration(seconds: 1);
             return StreamBuilder<Duration>(
               stream: AudioService.positionStream,
               builder: (context, snapshot) {

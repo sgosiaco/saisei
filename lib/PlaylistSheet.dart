@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:saisei/SongList.dart';
+import 'package:saisei/Utils.dart';
 
 class PlayListSheet extends StatefulWidget {
   @override
@@ -49,7 +50,7 @@ class _PlaylistClosed extends StatelessWidget {
 class _PlaylistOpened extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    print('PLAYLIST ${AudioServiceBackground.queue?.length}');
+    log('PLAYLIST ${AudioServiceBackground.queue?.length}');
     AudioServiceBackground.queue;
     return Scrollbar(
       child: StreamBuilder<List<MediaItem>>(

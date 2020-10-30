@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
-
 import 'package:saisei/main.dart';
 
 class SongList extends StatelessWidget {

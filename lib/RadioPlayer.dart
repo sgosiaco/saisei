@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart';
 import 'package:flutter/material.dart';
-import 'package:saisei/main.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:saisei/main.dart';
+import 'package:saisei/Utils.dart';
 
 class RadioPlayer extends StatefulWidget {
   @override
@@ -32,7 +32,7 @@ class _RadioPlayerState extends State<RadioPlayer> {
       final d = message['d'];
       switch (op) {
         case 0:
-          print('Radio Start');
+          log('Radio Start');
           _heartbeat = Timer.periodic(Duration(milliseconds: d['heartbeat']), (timer) {
             channel.sink.add(jsonEncode({'op': 9}));
           });
@@ -48,7 +48,7 @@ class _RadioPlayerState extends State<RadioPlayer> {
             );
           });
           //AudioServiceBackground.setMediaItem(info);
-          print('Radio new song | $_info');
+          log('Radio new song | $_info');
           break;
         default:
       }

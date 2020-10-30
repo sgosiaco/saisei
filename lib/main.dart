@@ -9,10 +9,11 @@ import 'package:audio_service/audio_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:saisei/AudioPlayerTask.dart';
-import 'package:saisei/SongList.dart';
 import 'package:saisei/ControlSheet.dart';
-import 'package:saisei/Utils.dart';
 import 'package:saisei/RadioPlayer.dart';
+import 'package:saisei/SongList.dart';
+import 'package:saisei/Utils.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
@@ -132,7 +133,7 @@ class _PlayerState extends State<Player> {
     List<MediaItem> songsHistory = [];
     try {
       if (await songFile.exists()) {
-        print('FILE EXISTS');
+        log('FILE EXISTS');
         songsJson = jsonDecode(await songFile.readAsString()) as List;
         songsHistory = songsJson.map<MediaItem>((song) => MediaItem.fromJson(song)).toList();
         setState(() {
@@ -158,7 +159,7 @@ class _PlayerState extends State<Player> {
 
     // if current list is not the same as the history then load current into state
     if (!equal) {
-      print('not equal');
+      log('not equal');
       setState(() {
         _songs = current;
       });
@@ -171,7 +172,7 @@ class _PlayerState extends State<Player> {
     sendPort.send(port.sendPort);
     
     await for (var msg in port) {
-      print('ISOLATE RECEIVED');
+      log('ISOLATE RECEIVED');
       SendPort replyTo = msg[1];
       final songsMedia = (msg[0]['current'] as List<Map<String, dynamic>>).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
       final songsHistory = (msg[0]['history'] as List);
@@ -180,7 +181,7 @@ class _PlayerState extends State<Player> {
       replyTo.send({'songs': songsMedia, 'equal': equal});
       final songFile = File(msg[0]['path']);
       if (!equal || !await songFile.exists()) {
-        print('WRITING FILE');
+        log('WRITING FILE');
         songFile.writeAsString(jsonEncode(songsMedia));
       }
     }
