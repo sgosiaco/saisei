@@ -15,7 +15,9 @@ class _PlayListSheetState extends State<PlayListSheet> {
   @override
   Widget build(BuildContext context) {
     return OpenContainer<bool>(
-      openColor: Theme.of(context).primaryColor,
+      openColor: Colors.white,
+      closedColor: Theme.of(context).primaryColor,
+      closedElevation: 0,
       closedShape: const RoundedRectangleBorder(),
       transitionType: _transitionType,
       openBuilder: (BuildContext context, VoidCallback _) {
@@ -43,21 +45,30 @@ class _PlaylistClosed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(icon: Icon(Icons.list), onPressed: openContainer);
+    return IconButton(icon: Icon(Icons.list), onPressed: openContainer, color: Colors.white);
   }
 }
 
 class _PlaylistOpened extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    log('PLAYLIST ${AudioServiceBackground.queue?.length}');
-    AudioServiceBackground.queue;
+    final ScrollController controller = ScrollController();
     return Scrollbar(
+      controller: controller,
       child: StreamBuilder<List<MediaItem>>(
         stream: AudioService.queueStream,
         builder: (context, snapshot) {
           final queue = snapshot.data ?? [];
-          return SongList(songs: queue);
+          return FutureBuilder(
+            future: AudioService.customAction('shuffle'),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return SongList(songs: queue, controller: controller, shuffleIndices: snapshot.data);
+              } else {
+                return SongList(songs: queue, controller: controller);
+              }
+            }
+          );
         }
       )
     );

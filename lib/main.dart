@@ -87,8 +87,8 @@ class _PlayerState extends State<Player> {
                 TabBar(
                   tabs: [
                     Tab(text: 'Songs'),
-                    Tab(text: 'Radio'),
-                    Tab(text: 'Playlists')
+                    Tab(text: 'Playlists'),
+                    Tab(text: 'Radio')
                   ],
                 ),
               ],
@@ -97,8 +97,8 @@ class _PlayerState extends State<Player> {
           body: TabBarView(
             children: [
               _buildPlayer(),
+              SongList(songs: AudioService.queue ?? []),
               RadioPlayer(),
-              SongList(songs: AudioService.queue ?? [])
             ],
           ),
           bottomSheet: ControlSheet() 
@@ -112,7 +112,14 @@ class _PlayerState extends State<Player> {
       if ((_songs ?? []).length == 0) {
         return Center(child: CircularProgressIndicator());
       }
-        return Scrollbar(child: SongList(songs: _songs));
+        return SafeArea(
+          child: Column(
+            children: [
+              AppBar(actions: [IconButton(icon: Icon(Icons.sort), onPressed: () => Scaffold.of(context).showSnackBar(SnackBar(content: Text('Sort'))))],),
+              Expanded(child: Padding(padding: EdgeInsets.only(bottom: 76),child: Scrollbar(child: SongList(songs: _songs))))
+            ],
+          ),
+        );
     });
   }
 

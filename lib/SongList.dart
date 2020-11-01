@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:saisei/main.dart';
+import 'package:saisei/Utils.dart';
 
 class SongList extends StatelessWidget {
   final List<MediaItem> songs;
@@ -16,29 +17,28 @@ class SongList extends StatelessWidget {
       shrinkWrap: true,
       scrollDirection: Axis.vertical,
       padding: EdgeInsets.all(10),
-      itemCount: songs.length * 2, // need to be *2 because adding dividers
+      itemCount: (shuffleIndices?.length ?? songs.length) * 2, // need to be *2 because adding dividers
       itemBuilder: (BuildContext context, int idx) {
-      if (idx.isOdd) {
-        return Divider();
+        if (idx.isOdd) {
+          return Divider();
+        }
+        var index = idx ~/ 2;
+        return SongTile(songs: songs, index: index, controller: controller, shuffleIndices: shuffleIndices);
       }
-      var index = idx ~/ 2;
-      if (shuffleIndices != null) {
-        index = shuffleIndices[index];
-      }
-      return SongTile(songs: songs, index: index, controller: controller);
-    });
+    );
   }
 }
 
 class SongTile extends StatelessWidget {
   final List<MediaItem> songs;
-  final int index;
+  final index;
   final ScrollController controller;
-  SongTile({@required this.songs, @required this.index, this.controller});
+  final List<int> shuffleIndices;
+  SongTile({@required this.songs, @required this.index, this.controller, this.shuffleIndices});
 
   @override
   Widget build(BuildContext context) {
-    final MediaItem song = songs[index];
+    final MediaItem song = songs[shuffleIndices?.elementAt(index) ?? index];
     return ListTile(
       title: Text(
         song.title,

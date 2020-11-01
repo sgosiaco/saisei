@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:saisei/ControlBar.dart';
+import 'package:saisei/PlaylistSheet.dart';
 import 'package:saisei/SongList.dart';
 import 'package:saisei/Utils.dart';
 
@@ -267,62 +268,81 @@ class BottomControls extends StatelessWidget {
         var index = modes.indexOf(mode);
         return Row(
           children: [
-            IconButton(
-              icon: icons[index],
-              onPressed: () {
-                if (AudioService.running) {
-                  AudioService.setRepeatMode(modes[(index + 1) % modes.length]);
-                }
-              },
-            ),
             Expanded(
-              child: IconButton(
-                icon: Icon(Icons.list, color: Colors.white),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context, 
-                    builder: (context) {
-                      final ScrollController controller = ScrollController();
-                      return Container(
-                        height: 500,
-                        child: Scrollbar(
-                          controller: controller,
-                          child: StreamBuilder<List<MediaItem>>(
-                            stream: AudioService.queueStream,
-                            builder: (context, snapshot) {
-                              var queue = snapshot.data ?? [];
-                              return FutureBuilder(
-                                future: AudioService.customAction('shuffle'),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData) {
-                                    return SongList(songs: queue, controller: controller, shuffleIndices: snapshot.data);
-                                  } else {
-                                    return SongList(songs: queue, controller: controller);
-                                  }
-                                }
-                              );
-                            }
-                          )
-                        )
-                      );
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: icons[index],
+                  onPressed: () {
+                    if (AudioService.running) {
+                      AudioService.setRepeatMode(modes[(index + 1) % modes.length]);
                     }
-                  );
-                },
+                  },
+                )
               )
             ),
-            IconButton(
-              icon: shuffle ? Icon(Icons.shuffle, color: Colors.grey) : Icon(Icons.shuffle, color: Colors.white),
-              onPressed: () {
-                if (AudioService.running) {
-                  if (shuffle) {
-                    AudioService.setShuffleMode(AudioServiceShuffleMode.none);
-                  } else {
-                    AudioService.setShuffleMode(AudioServiceShuffleMode.all);
-                  }
-                }
-              },
+            Align(
+              alignment: Alignment.center,
+              child: PlayListSheet()
+            ),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: shuffle ? Icon(Icons.shuffle, color: Colors.grey) : Icon(Icons.shuffle, color: Colors.white),
+                  onPressed: () {
+                    if (AudioService.running) {
+                      if (shuffle) {
+                        AudioService.setShuffleMode(AudioServiceShuffleMode.none);
+                      } else {
+                        AudioService.setShuffleMode(AudioServiceShuffleMode.all);
+                      }
+                    }
+                  },
+                )
+              )
             )
-          ]);
+          ]
+        );
       });
+  }
+}
+
+class PlaylistModal extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.list, color: Colors.white),
+      onPressed: () {
+        showModalBottomSheet(
+          context: context, 
+          builder: (context) {
+            final ScrollController controller = ScrollController();
+            return Container(
+              height: MediaQuery.of(context).size.height / 3,
+              child: Scrollbar(
+                controller: controller,
+                child: StreamBuilder<List<MediaItem>>(
+                  stream: AudioService.queueStream,
+                  builder: (context, snapshot) {
+                    var queue = snapshot.data ?? [];
+                    return FutureBuilder(
+                      future: AudioService.customAction('shuffle'),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return SongList(songs: queue, controller: controller, shuffleIndices: snapshot.data);
+                        } else {
+                          return SongList(songs: queue, controller: controller);
+                        }
+                      }
+                    );
+                  }
+                )
+              )
+            );
+          }
+        );
+      },
+    );
   }
 }
