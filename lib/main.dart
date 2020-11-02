@@ -55,6 +55,7 @@ class Player extends StatefulWidget {
 }
 
 class _PlayerState extends State<Player> {
+  final audioQuery = FlutterAudioQuery();
   final player = AudioPlayer();
   List<MediaItem> _songs;
   Isolate _loader;
@@ -115,7 +116,43 @@ class _PlayerState extends State<Player> {
         return SafeArea(
           child: Column(
             children: [
-              AppBar(actions: [IconButton(icon: Icon(Icons.sort), onPressed: () => Scaffold.of(context).showSnackBar(SnackBar(content: Text('Sort'))))],),
+              AppBar(
+                flexibleSpace: TextField(
+                  onSubmitted: (value) async {
+                    log('Search test: $value');
+                    final results = await audioQuery.searchSongs(query: value);
+                    print(results);
+                    showModalBottomSheet(
+                      context: context, 
+                      builder: (context) {
+                        if (results.length > 0) {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: results.length * 2,
+                            itemBuilder: (context, idx) {
+                              if (idx.isOdd) { return Divider(); }
+                              final index = idx ~/ 2;
+                              return ListTile(
+                                leading: safeLoadImage(results[index].albumArtwork),
+                                title: Text(results[index].title, maxLines: 1, overflow: TextOverflow.ellipsis,),
+                                subtitle: Text(results[index].artist, maxLines: 1, overflow: TextOverflow.ellipsis,),
+                              );
+                            },
+                          );
+                        }
+                        return Center(child: Text('No results'));
+                      }
+                    );
+                  },
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.sort), 
+                    onPressed: () async {
+                          log('Sorting');
+                    })
+                ],
+              ),
               Expanded(child: Padding(padding: EdgeInsets.only(bottom: 76),child: Scrollbar(child: SongList(songs: _songs))))
             ],
           ),
@@ -157,7 +194,7 @@ class _PlayerState extends State<Player> {
     }
     SendPort sendPort = await receivePort.first;
     
-    final songsInfo = await FlutterAudioQuery().getSongs();
+    final songsInfo = await audioQuery.getSongs();
     final songSerialized = songsInfo.map<Map<String, dynamic>>((song) => song.toMap()).toList();
 
     Map<String, dynamic> msg = await sendReceive(sendPort, {'history': songsJson, 'current': songSerialized, 'path': path});
@@ -172,6 +209,13 @@ class _PlayerState extends State<Player> {
       });
     }
     //can't kill loader here b/c file still writing
+    log('Loading albums');
+    print(await audioQuery.getAlbums());
+    log('Loading arists');
+    print(await audioQuery.getArtists());
+    log('Loading playlists');
+    print(await audioQuery.getPlaylists());
+    log('Done loading');
   }
 
   static Future<void> songLoader(SendPort sendPort) async {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer' as dev;
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
@@ -15,6 +16,23 @@ String convertDuration(Duration input) {
     return input.toString().split('.')[0];
   }
   return input.toString().split('.')[0].substring(2);
+}
+
+Image safeLoadImage(String artUri) {
+  Image image =  Image(image: AssetImage('assets/default.jpg'));
+  if (artUri != null) {
+    try {
+      File file = File.fromUri(Uri.parse(artUri));
+      if (file.existsSync()) {
+        image = Image.file(file);
+      } else {
+        log('ART DOESNT EXIST');
+      }
+    } catch (e) {
+      log('COULDNT OPEN ART');
+    }
+  }
+  return image;
 }
 
 extension CustomSongInfo on SongInfo {

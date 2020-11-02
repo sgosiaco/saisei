@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
@@ -40,6 +41,7 @@ class SongTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final MediaItem song = songs[shuffleIndices?.elementAt(index) ?? index];
     return ListTile(
+      leading: AspectRatio(aspectRatio: 1, child: safeLoadImage(song.artUri)),
       title: Text(
         song.title,
         style: TextStyle(fontSize: 14.0),

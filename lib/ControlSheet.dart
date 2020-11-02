@@ -83,19 +83,7 @@ class ArtInfo extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot == null) return SizedBox();
           final metadata = snapshot.data;
-          Image image =  Image(image: AssetImage('assets/default.jpg'));
-          if (metadata?.artUri != null) {
-            try {
-              File file = File.fromUri(Uri.parse(metadata.artUri));
-              if (file.existsSync()) {
-                image = Image.file(file);
-              } else {
-                log('ART DOESNT EXIST');
-              }
-            } catch (e) {
-              log('COULDNT OPEN ART');
-            }
-          }
+          Image image =  safeLoadImage(metadata?.artUri);
           return Column(
             children: [
               Expanded(
