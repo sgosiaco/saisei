@@ -113,3 +113,41 @@ extension CustomList on List<MediaItem> {
     return this.getRange(middle, this.length).toList();
   }
 }
+
+class AlbumItem {
+  final String title;
+  final String artist;
+  final String artUri;
+  final List<int> songs;
+  AlbumItem({this.title, this.artist, this.artUri, this.songs});
+
+  factory AlbumItem.fromJson(Map raw) => AlbumItem(
+    title: raw['title'],
+    artist: raw['artist'],
+    artUri: raw['artUri'],
+    songs: List<int>.from(raw['songs'])
+  );
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'artist': artist,
+    'artUri': artUri,
+    'songs': songs
+  };
+}
+
+class ArtistItem {
+  final String artist;
+  final List<AlbumItem> albums;
+  ArtistItem({this.artist, this.albums});
+
+  factory ArtistItem.fromJson(Map raw) => ArtistItem(
+    artist: raw['artist'],
+    albums: raw['albums'].map<AlbumItem>((item) => AlbumItem.fromJson(item)).toList()
+  );
+
+  Map<String, dynamic> toJson() => {
+    'artist': artist,
+    'albums': albums
+  };
+}

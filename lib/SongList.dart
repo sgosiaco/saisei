@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
@@ -9,7 +8,8 @@ class SongList extends StatelessWidget {
   final List<MediaItem> songs;
   final ScrollController controller;
   final List<int> shuffleIndices;
-  SongList({@required this.songs, this.controller, this.shuffleIndices});
+  final bool pop;
+  SongList({@required this.songs, this.controller, this.shuffleIndices, this.pop});
 
   @override
   Widget build(BuildContext context) {
@@ -24,22 +24,46 @@ class SongList extends StatelessWidget {
           return Divider();
         }
         var index = idx ~/ 2;
-        return SongTile(songs: songs, index: index, controller: controller, shuffleIndices: shuffleIndices);
+        final MediaItem song = songs[shuffleIndices?.elementAt(index) ?? index];
+        return SongTile(
+          song: song, 
+          index: index,
+          onTapped: (index) async {
+            if (!AudioService.running) {
+              //await Player.of(context).startAudioService();
+              await context.findAncestorWidgetOfExactType<Player>()?.state?.startAudioService();
+            }
+            if (AudioService.playbackState?.playing ?? false) {
+              AudioService.pause();
+            }
+            if (shuffleIndices == null) {
+              AudioService.updateQueue(songs.getRange(index, songs.length).toList());
+            } else {
+              final list = shuffleIndices.map((e) => songs[e]).toList();
+              final newList = list.getRange(index, shuffleIndices.length).toList();
+              newList.addAll(list.getRange(0, index));
+              AudioService.updateQueue(newList);
+            }
+            if (pop ?? false) {
+              Navigator.pop(context);
+            } else {
+              controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
+            }
+          },
+        );
       }
     );
   }
 }
 
 class SongTile extends StatelessWidget {
-  final List<MediaItem> songs;
-  final index;
-  final ScrollController controller;
-  final List<int> shuffleIndices;
-  SongTile({@required this.songs, @required this.index, this.controller, this.shuffleIndices});
+  final MediaItem song;
+  final int index;
+  final Function(int) onTapped;
+  SongTile({@required this.song, @required this.index, @required this.onTapped});
 
   @override
   Widget build(BuildContext context) {
-    final MediaItem song = songs[shuffleIndices?.elementAt(index) ?? index];
     return ListTile(
       leading: AspectRatio(aspectRatio: 1, child: safeLoadImage(song.artUri)),
       title: Text(
@@ -50,17 +74,8 @@ class SongTile extends StatelessWidget {
         '${song.artist}',
         style: TextStyle(fontSize: 12.0)
       ),
-      onTap: () async {
-        if (!AudioService.running) {
-          await Player.of(context).startAudioService();
-        }
-        if (AudioService.playbackState?.playing ?? false) {
-          AudioService.pause();
-        }
-        //AudioService.skipToQueueItem(songs[index].id);
-        //AudioService.customAction(name)
-        AudioService.updateQueue(songs.getRange(index, songs.length).toList()); // songs.getRange(index, songs.length).toList()
-        controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
+      onTap: () {
+        onTapped(index);
       },
     );
   }
