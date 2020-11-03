@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:saisei/AlbumArt.dart';
 import 'package:saisei/ControlBar.dart';
 import 'package:saisei/PlaylistSheet.dart';
 import 'package:saisei/SongList.dart';
@@ -83,13 +84,13 @@ class ArtInfo extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot == null) return SizedBox();
           final metadata = snapshot.data;
-          Image image =  safeLoadImage(metadata?.artUri);
+          Widget image = metadata == null ? CircularProgressIndicator() : AlbumArt(type: ResourceType.SONG, item: metadata);
           return Column(
             children: [
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Center(child: image)
+                  child: FittedBox(fit: BoxFit.contain, alignment: Alignment.center, child: Container(alignment: Alignment.center, width: 200, height: 200, child: image))
                 )
               ),
               Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.all(10)), //Theme.of(context).textTheme.headline6

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:saisei/AlbumArt.dart';
 import 'package:saisei/SongList.dart';
 import 'package:saisei/Utils.dart';
 
@@ -40,7 +42,7 @@ class AlbumTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AlbumItem album = albums[index];
     return ListTile(
-      leading: AspectRatio(aspectRatio: 1, child: safeLoadImage(album.artUri)),
+      leading: AspectRatio(aspectRatio: 1, child: AlbumArt(type: ResourceType.ALBUM, item: album)),
       title: Text(
         album.title,
         style: TextStyle(fontSize: 14.0),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:saisei/AlbumArt.dart';
 import 'package:saisei/main.dart';
 import 'package:saisei/Utils.dart';
 
@@ -45,7 +47,7 @@ class SongList extends StatelessWidget {
               AudioService.updateQueue(newList);
             }
             if (pop ?? false) {
-              Navigator.pop(context);
+              Navigator.pop(context, true);
             } else {
               controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
             }
@@ -65,7 +67,7 @@ class SongTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: AspectRatio(aspectRatio: 1, child: safeLoadImage(song.artUri)),
+      leading: AspectRatio(aspectRatio: 1, child: AlbumArt(type: ResourceType.SONG, item: song)),
       title: Text(
         song.title,
         style: TextStyle(fontSize: 14.0),

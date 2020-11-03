@@ -4,10 +4,12 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:saisei/AlbumArt.dart';
 import 'package:saisei/AlbumList.dart';
 import 'package:saisei/ArtistList.dart';
 import 'package:saisei/AudioPlayerTask.dart';
@@ -140,7 +142,7 @@ class _PlayerState extends State<Player> {
                               if (idx.isOdd) { return Divider(); }
                               final index = idx ~/ 2;
                               return ListTile(
-                                leading: safeLoadImage(results[index].albumArtwork),
+                                leading: AlbumArt(item: results[index], type: ResourceType.SONG), //safeLoadImage(results[index].albumArtwork)
                                 title: Text(results[index].title, maxLines: 1, overflow: TextOverflow.ellipsis,),
                                 subtitle: Text(results[index].artist, maxLines: 1, overflow: TextOverflow.ellipsis,),
                               );
@@ -168,6 +170,13 @@ class _PlayerState extends State<Player> {
   }
 
   Future<bool> startAudioService() {
+    AudioService.customEventStream.listen((event) {
+      if (event != null) {
+        if (event['name'] == 'close') {
+          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+        }
+      }
+    });
     return AudioService.start(
       backgroundTaskEntrypoint: _backgroundTaskEntrypoint,
       androidEnableQueue: true,
@@ -229,7 +238,7 @@ class _PlayerState extends State<Player> {
     
     // getting all songs with flutter audio query and serializing it to be sent to isolate
     final songsInfo = await _audioQuery.getSongs();
-    final songSerialized = songsInfo.map<Map<String, dynamic>>((song) => song.toMap()).toList();
+    final songSerialized = songsInfo.where((element) => element.isMusic || element.isPodcast).map<Map<String, dynamic>>((song) => song.toMap()).toList();
     // waiting to get back processed list from isolate
     Map<String, dynamic> msg = await sendReceive(sendPort, {'songsHistory': songsJson, 'songsCurrent': songSerialized, 'path': dir.path});
     final current = (msg['songs'] as List<Map<String, dynamic>>).map<MediaItem>((e) => MediaItem.fromJson(e)).toList();
@@ -267,7 +276,7 @@ class _PlayerState extends State<Player> {
       // receive songsHistory and songsCurrent, convert SongInfo to MediaItem, sort list by  dateModified and then check if equal
       final songsCurrent = (msg[0]['songsCurrent'] as List<Map<String, dynamic>>).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
       final songsHistory = (msg[0]['songsHistory'] as List);
-      songsCurrent.sort((a,b) => File(b['id']).lastModifiedSync().compareTo(File(a['id']).lastModifiedSync()));
+      songsCurrent.sort((a,b) => File(b['extras']['uri']).lastModifiedSync().compareTo(File(a['extras']['uri']).lastModifiedSync()));
       final songsEqual = songsCurrent.toString() == songsHistory.toString();
       // generating album/artist maps
       final albumMap = HashMap<String, AlbumItem>();
@@ -281,21 +290,38 @@ class _PlayerState extends State<Player> {
             return value;
           },
           ifAbsent: () {
-            return AlbumItem(title: song['album'], artist: song['artist'], artUri: song['artUri'], songs: [i]);
+            return AlbumItem(id: song['extras']['albumId'], title: song['album'], artist: song['artist'], artUri: song['artUri'], songs: [i]);
           }
         );
 
         artistMap.update(
           song['artist'], 
           (value) {
-            value.albums.add(album);
+            if (!value.albums.contains(album)) {
+              value.albums.add(album);
+            }
             return value;
           },
           ifAbsent: () {
-            return ArtistItem(artist: song['artist'], albums: [album]);
+            return ArtistItem(id: song['extras']['artistId'], artist: song['artist'], albums: [album]);
           }
         );
       }
+      /*
+      albumMap.forEach((key, value) {
+        albumMap.update(key, (value) {
+          value.songs.sort((a,b) => a.title.compareTo(b.title));
+          return value;
+        });
+      });
+      */
+
+      artistMap.forEach((key, value) {
+        artistMap.update(key, (value) {
+          value.albums.sort((a,b) => a.title.compareTo(b.title));
+          return value;
+        });
+      });
       
       replyTo.send({'songs': songsCurrent, 'equal': songsEqual, 'albums': albumMap, 'artists': artistMap});
       final songFile = File(p.join(msg[0]['path'], 'songs.json'));

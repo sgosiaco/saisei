@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
@@ -102,7 +101,10 @@ class AudioPlayerTask extends BackgroundAudioTask {
     await _player.dispose();
     _eventSub.cancel();
     await _broadcastState();
-    SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+    AudioServiceBackground.sendCustomEvent({
+      'name': 'close',
+      'data': true
+    });
     await super.onStop();
   }
 
@@ -168,7 +170,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
       shuffling = true;
     }
     await _player.load(ConcatenatingAudioSource(
-      children: queue.map((e) => AudioSource.uri(Uri.parse(e.id), tag: e)).toList()
+      children: queue.map((e) => AudioSource.uri(Uri.parse(e.extras['uri']), tag: e)).toList()
     ));
     _player.play();
     if(shuffling) {

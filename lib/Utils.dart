@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer' as dev;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -39,7 +40,7 @@ extension CustomSongInfo on SongInfo {
   Map<String, dynamic> toMap() {
     final song = this;
     return {
-      'id': song.filePath,
+      'id': song.id, //song.filePath
       'album': song.album,
       'title':  song.title,
       'artist': song.artist,
@@ -50,7 +51,7 @@ extension CustomSongInfo on SongInfo {
       'composer': song.composer,
       'fileSize': song.fileSize,
       'track': song.track,
-      'uri': song.uri,
+      'uri': song.filePath, //song.uri
       'year': song.year
     };
   }
@@ -115,13 +116,17 @@ extension CustomList on List<MediaItem> {
 }
 
 class AlbumItem {
+  final String id;
   final String title;
   final String artist;
   final String artUri;
   final List<int> songs;
-  AlbumItem({this.title, this.artist, this.artUri, this.songs});
+  bool loaded;
+  Uint8List art;
+  AlbumItem({this.id, this.title, this.artist, this.artUri, this.songs});
 
   factory AlbumItem.fromJson(Map raw) => AlbumItem(
+    id: raw['id'],
     title: raw['title'],
     artist: raw['artist'],
     artUri: raw['artUri'],
@@ -129,6 +134,7 @@ class AlbumItem {
   );
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'title': title,
     'artist': artist,
     'artUri': artUri,
@@ -137,16 +143,21 @@ class AlbumItem {
 }
 
 class ArtistItem {
+  final String id;
   final String artist;
   final List<AlbumItem> albums;
-  ArtistItem({this.artist, this.albums});
+  bool loaded;
+  Uint8List art;
+  ArtistItem({this.id, this.artist, this.albums});
 
   factory ArtistItem.fromJson(Map raw) => ArtistItem(
+    id: raw['id'],
     artist: raw['artist'],
     albums: raw['albums'].map<AlbumItem>((item) => AlbumItem.fromJson(item)).toList()
   );
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'artist': artist,
     'albums': albums
   };
