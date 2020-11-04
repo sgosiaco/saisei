@@ -41,8 +41,7 @@ dependencies:
   # audio_service: ^0.15.2
   # getting latest git version instead to get positionStream!
   audio_service:
-    git:
-      url: git://github.com/ryanheise/audio_service.git
+    path: ../audio_service
   animations: ^1.1.2
   path_provider:  ^1.6.22
   path: ^1.7.0

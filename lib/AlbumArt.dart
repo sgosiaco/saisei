@@ -1,7 +1,5 @@
-import 'dart:convert';
+import 'dart:collection';
 import 'dart:typed_data';
-
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:saisei/Utils.dart';
@@ -16,39 +14,19 @@ class AlbumArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String id = item.id;
-    bool loaded;
-    Uint8List art;
-    switch (type) {
-      case ResourceType.ALBUM:
-      case ResourceType.ARTIST:
-        loaded = item.loaded;
-        art = item.art;
-        break;
-      case ResourceType.SONG:
-        loaded = item.extras['loaded'];
-        art = item.extras['art'] == null ? null : Uint8List.fromList(List<int>.from(jsonDecode(item.extras['art'])));
-        break;
-      default:
-        log('Wrong ResourceType for AlbumArt: ', error: type);
-    }
-    if (!(loaded ?? false)) {
-      var audioQuery = FlutterAudioQuery();
+    final bool exists = AlbumArtMap().exists(type: type, id: id);
+    if (!exists) {
       return FutureBuilder(
-        future: audioQuery.getArtwork(type: type, id: id, size: size ?? Size(100, 100)),
+        future: AlbumArtMap().loadAlbumArt(type: type, id: id),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             if (snapshot.data.length > 0) {
-              switch (type) {
-                case ResourceType.ALBUM:
-                case ResourceType.ARTIST:
-                  item.loaded = true;
-                  item.art = snapshot.data;
-                  break;
-                case ResourceType.SONG:
-                  (item as MediaItem).extras.update('loaded', (value) => value = true, ifAbsent: () => true);
-                  (item as MediaItem).extras.update('art', (value) => value = jsonEncode(snapshot.data), ifAbsent: () => jsonEncode(snapshot.data));
+              try {
+                return Image.memory(snapshot.data);
+              } catch (e) {
+                log('Error loading fresh image', error: e);
+                return Image(image: AssetImage('assets/default.jpg'));
               }
-              return Image.memory(snapshot.data);
             } else {
               return Image(image: AssetImage('assets/default.jpg'));
             }
@@ -57,13 +35,48 @@ class AlbumArt extends StatelessWidget {
         }
       );
     } else {
+      final Uint8List art = AlbumArtMap().getAlbumArt(type: type, id: id);
       if (art == null) {
-        print(loaded);
-        print(art);
         return Image(image: AssetImage('assets/default.jpg'));
       } else {
-        return Image.memory(art);
+        try {
+          return Image.memory(art);
+        } catch (e) {
+          log('Error loading cached image', error: e);
+          return Image(image: AssetImage('assets/default.jpg'));
+        }
       }
     }
+  }
+}
+
+class AlbumArtMap {
+  static final AlbumArtMap _instance = AlbumArtMap._internal();
+  final FlutterAudioQuery _audioQuery = FlutterAudioQuery();
+  final Map<ResourceType, HashMap<String, Uint8List>> artMap = {
+    ResourceType.ALBUM: HashMap<String, Uint8List>(),
+    ResourceType.ARTIST: HashMap<String, Uint8List>(),
+    ResourceType.SONG: HashMap<String, Uint8List>()
+  };
+
+  factory AlbumArtMap() {
+    return _instance;
+  }
+
+  AlbumArtMap._internal() {
+    log('AlbumArtMap Constructed'); 
+  }
+
+  bool exists({type: ResourceType.SONG, id: ''}) {
+    return artMap[type].containsKey(id);
+  }
+
+  Future<Uint8List> loadAlbumArt({type: ResourceType.SONG, id: ''}) async {
+    final Uint8List art = await _audioQuery.getArtwork(type: type, id: id);
+    return artMap[type].putIfAbsent(id, () => art);
+  }
+
+  Uint8List getAlbumArt({type: ResourceType.SONG, id: ''}) {
+    return artMap[type][id];
   }
 }
