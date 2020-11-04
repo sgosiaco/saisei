@@ -67,7 +67,7 @@ extension CustomMap on Map<String, dynamic> {
       artist: song['artist'],
       genre: '',
       duration: Duration(milliseconds: int.parse(song['duration'])),
-      artUri: song['artUri'] == null ? null : Uri.file(song['artUri'], windows: false).toString(),
+      artUri: song['artUri'],
       rating: Rating.newHeartRating(false),
       extras: {
         'albumId' : song['albumId'],
@@ -121,8 +121,6 @@ class AlbumItem {
   final String artist;
   final String artUri;
   final List<int> songs;
-  bool loaded;
-  Uint8List art;
   AlbumItem({this.id, this.title, this.artist, this.artUri, this.songs});
 
   factory AlbumItem.fromJson(Map raw) => AlbumItem(
@@ -146,8 +144,6 @@ class ArtistItem {
   final String id;
   final String artist;
   final List<AlbumItem> albums;
-  bool loaded;
-  Uint8List art;
   ArtistItem({this.id, this.artist, this.albums});
 
   factory ArtistItem.fromJson(Map raw) => ArtistItem(
