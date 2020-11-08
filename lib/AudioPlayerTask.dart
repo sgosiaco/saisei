@@ -70,7 +70,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
       if (sequence != null) {
         AudioServiceBackground.setQueue(sequence.map<MediaItem>((item) => item.tag).toList() ?? []);
         AudioServiceBackground.setMediaItem(AudioServiceBackground.queue[0]);
-        log('SEQUENCE ${sequence.map<String>((item) => (item.tag as MediaItem).title)}');
+        log('SEQUENCE');
       }
     });
 
@@ -127,25 +127,76 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
   @override
   Future<void> onSkipToPrevious() async {
-    if(_player.loopMode == LoopMode.one) {
-      _player.seek(Duration.zero);
-    } else {
-      if(_player.shuffleModeEnabled) {
-        int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) - 1;
-        if (shuffleIndex < 0) {
-          shuffleIndex = 0;
+    switch (_player.loopMode) {
+      case LoopMode.one:
+        _player.seek(Duration.zero);
+        break;
+      case LoopMode.all:
+        if(_player.shuffleModeEnabled) {
+          int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) - 1;
+          if (shuffleIndex == -1) {
+            shuffleIndex = shuffleIndices.length - 1;
+          }
+          _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
+        } else {
+          if (_player.currentIndex == 0) {
+            _player.seek(Duration.zero, index: AudioServiceBackground.queue.length - 1);
+          } else {
+            _player.seekToPrevious();
+          }
         }
-        _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
-      } else {
-        _player.seekToPrevious();
-      }
+        break;
+      case LoopMode.off:
+        if (_player.shuffleModeEnabled) {
+          int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) - 1;
+          if (shuffleIndex == -1) {
+            shuffleIndex = 0;
+          } 
+          _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
+        } else {
+          _player.seekToPrevious();
+        }
+        break;
+    }
+    if (!_player.playing) {
+      _player.play();
     }
   }
 
   @override
   Future<void> onSkipToNext() async {
-    await _player.seek(_player.duration);
-    if(!_player.playing) {
+    switch (_player.loopMode) {
+      case LoopMode.one:
+        _player.seek(Duration.zero);
+        break;
+      case LoopMode.all:
+        if(_player.shuffleModeEnabled) {
+          int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) + 1;
+          if (shuffleIndex == shuffleIndices.length) {
+            shuffleIndex = 0;
+          }
+          _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
+        } else {
+          if (_player.currentIndex == AudioServiceBackground.queue.length - 1) {
+            _player.seek(Duration.zero, index: 0);
+          } else {
+            _player.seekToNext();
+          }
+        }
+        break;
+      case LoopMode.off:
+        if (_player.shuffleModeEnabled) {
+          int shuffleIndex = shuffleIndices.indexOf(_player.currentIndex) + 1;
+          if (shuffleIndex == shuffleIndices.length) {
+            shuffleIndex = shuffleIndices.length - 1;
+          } 
+          _player.seek(Duration.zero, index: shuffleIndices[shuffleIndex]);
+        } else {
+          _player.seekToNext();
+        }
+        break;
+    }
+    if (!_player.playing) {
       _player.play();
     }
   }
@@ -170,7 +221,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
       shuffling = true;
     }
     await _player.load(ConcatenatingAudioSource(
-      children: queue.map((e) => AudioSource.uri(Uri.parse(e.extras['uri']), tag: e)).toList()
+      children: queue.map((e) => AudioSource.uri(Uri.parse(e.extras['uri']), tag: e)).toList(),
+      useLazyPreparation: true
     ));
     _player.play();
     if(shuffling) {

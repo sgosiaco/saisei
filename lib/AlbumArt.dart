@@ -21,12 +21,7 @@ class AlbumArt extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             if (snapshot.data.length > 0) {
-              try {
-                return Image.memory(snapshot.data);
-              } catch (e) {
-                log('Error loading fresh image', error: e);
-                return Image(image: AssetImage('assets/default.jpg'));
-              }
+              return Image.memory(snapshot.data);
             } else {
               return Image(image: AssetImage('assets/default.jpg'));
             }
@@ -39,10 +34,9 @@ class AlbumArt extends StatelessWidget {
       if (art == null) {
         return Image(image: AssetImage('assets/default.jpg'));
       } else {
-        try {
+        if (art.length > 0) {
           return Image.memory(art);
-        } catch (e) {
-          log('Error loading cached image', error: e);
+        } else {
           return Image(image: AssetImage('assets/default.jpg'));
         }
       }
