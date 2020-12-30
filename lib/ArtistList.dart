@@ -48,7 +48,7 @@ class ArtistTile extends StatelessWidget {
         style: TextStyle(fontSize: 14.0),
       ),
       subtitle: Text(
-        '${artist.id}',
+        '${artist.songCount} song${artist.songCount > 1 ? 's' : ''} in ${artist.albums.length} album${artist.albums.length > 1 ? 's' : ''}', //'${artist.id}'
         style: TextStyle(fontSize: 12.0)
       ),
       onTap: ()  {

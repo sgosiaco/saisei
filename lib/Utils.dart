@@ -143,7 +143,10 @@ class ArtistItem {
   final String id;
   final String artist;
   final List<AlbumItem> albums;
-  ArtistItem({this.id, this.artist, this.albums});
+  int songCount = 0;
+  ArtistItem({this.id, this.artist, this.albums}) {
+    albums.forEach((element) { songCount += element.songs.length; });
+  }
 
   factory ArtistItem.fromJson(Map raw) => ArtistItem(
     id: raw['id'],
