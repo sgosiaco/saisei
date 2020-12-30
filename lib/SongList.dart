@@ -47,7 +47,8 @@ class SongList extends StatelessWidget {
               AudioService.updateQueue(newList);
             }
             if (pop ?? false) {
-              Navigator.pop(context, true);
+              //Navigator.pop(context, true);
+              Navigator.of(context).popUntil((route) => route.isFirst);
             } else {
               controller?.animateTo(0.0, duration: const Duration(milliseconds: 1000), curve: Curves.easeOut);
             }

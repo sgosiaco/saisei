@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:developer' as dev;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';

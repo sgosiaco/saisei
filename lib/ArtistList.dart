@@ -56,7 +56,7 @@ class ArtistTile extends StatelessWidget {
           context, 
           MaterialPageRoute(
             builder: (context) {
-              return SafeArea(child: Scrollbar(child: Scaffold(body: AlbumList(songs: songs, albums: artist.albums))));
+              return SafeArea(child: Scrollbar(child: Scaffold(body: AlbumList(songs: songs, albums: artist.albums, pop: true))));
             }
           )
         );

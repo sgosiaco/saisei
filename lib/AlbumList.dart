@@ -10,7 +10,8 @@ class AlbumList extends StatelessWidget {
   final List<MediaItem> songs;
   final List<AlbumItem> albums;
   final ScrollController controller;
-  AlbumList({@required this.songs, @required this.albums, this.controller});
+  final bool pop;
+  AlbumList({@required this.songs, @required this.albums, this.controller, this.pop});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +26,7 @@ class AlbumList extends StatelessWidget {
           return Divider();
         }
         var index = idx ~/ 2;
-        return AlbumTile(songs: songs, albums: albums, index: index, controller: controller);
+        return AlbumTile(songs: songs, albums: albums, index: index, controller: controller, pop: pop ?? false);
       }
     );
   }
@@ -36,7 +37,8 @@ class AlbumTile extends StatelessWidget {
   final List<AlbumItem> albums;
   final index;
   final ScrollController controller;
-  AlbumTile({@required this.songs, @required this.albums, @required this.index, this.controller});
+  final bool pop;
+  AlbumTile({@required this.songs, @required this.albums, @required this.index, this.controller, this.pop});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,7 @@ class AlbumTile extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) {
-              return SafeArea(child: Scrollbar(child: Scaffold(body: SongList(songs: songs, shuffleIndices: album.songs))));
+              return SafeArea(child: Scrollbar(child: Scaffold(body: SongList(songs: songs, shuffleIndices: album.songs, pop: pop))));
             } 
           ),
         );

@@ -108,7 +108,7 @@ class _PlayerState extends State<Player> {
             children: [
               _buildPlayer(),
               ArtistList(songs: _songs ?? [], artists: _artists ?? []),
-              AlbumList(songs: _songs ?? [], albums: _albums ?? []),
+              AlbumList(songs: _songs ?? [], albums: _albums ?? [], pop: true),
             ],
           ),
           bottomSheet: ControlSheet() 
@@ -158,7 +158,10 @@ class _PlayerState extends State<Player> {
                   IconButton(
                     icon: Icon(Icons.sort), 
                     onPressed: () async {
-                          log('Sorting');
+                      log('Sorting');
+                      setState(() {
+                        _songs = _songs..sort((a,b) => a.title.compareTo(b.title));
+                      });
                     })
                 ],
               ),
