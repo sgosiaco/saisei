@@ -68,6 +68,7 @@ enum sortType { title, album, artist, date }
 class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   final _audioQuery = FlutterAudioQuery();
   List<MediaItem> _songs;
+  List<MediaItem> _songsSortable;
   List<ArtistItem> _artists;
   List<AlbumItem> _albums;
   Isolate _loader;
@@ -81,12 +82,14 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   final GlobalKey<NavigatorState> artistKey = GlobalKey<NavigatorState>();
   sortType lastSort;
   bool ascend = true;
+  TextEditingController _searchController;
 
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(vsync: this, length: _tabs.length);
+    _searchController = TextEditingController();
     startAudioService();
     loadSongs();
   }
@@ -94,6 +97,7 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     AudioService.stop();
     _loader.kill();
     super.dispose();
@@ -174,31 +178,25 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
             children: [
               AppBar(
                 flexibleSpace: TextField(
+                  controller: _searchController,
+                  style: TextStyle(color: Colors.white),
+                  cursorColor: Colors.white,
+                  decoration: InputDecoration(
+                    hintStyle: TextStyle(color: Colors.white),
+                    prefixIcon: Icon(Icons.search, color: Colors.white,),
+                    hintText: 'Search...'
+                  ),
                   onSubmitted: (value) async {
-                    log('Search test: $value');
-                    final results = await _audioQuery.searchSongs(query: value);
-                    print(results);
+                    final results = _songs.where((element) => element.contains(value)).toList();
                     showModalBottomSheet(
                       context: context, 
                       builder: (context) {
                         if (results.length > 0) {
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: results.length * 2,
-                            itemBuilder: (context, idx) {
-                              if (idx.isOdd) { return Divider(); }
-                              final index = idx ~/ 2;
-                              return ListTile(
-                                leading: AlbumArt(item: results[index], type: ResourceType.SONG), //safeLoadImage(results[index].albumArtwork)
-                                title: Text(results[index].title, maxLines: 1, overflow: TextOverflow.ellipsis,),
-                                subtitle: Text(results[index].artist, maxLines: 1, overflow: TextOverflow.ellipsis,),
-                              );
-                            },
-                          );
+                          return SongList(songs: results,);
                         }
                         return Center(child: Text('No results'));
                       }
-                    );
+                    ).then((void value) => _searchController.text = '');
                   },
                 ),
                 actions: [
@@ -231,43 +229,43 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
                       switch (result) {
                         case sortType.title:
                           if (ascend) {
-                            _songs.sort((a,b) => a.title.compareTo(b.title));
+                            _songsSortable.sort((a,b) => a.title.compareTo(b.title));
                           } else {
-                            _songs.sort((a,b) => b.title.compareTo(a.title));
+                            _songsSortable.sort((a,b) => b.title.compareTo(a.title));
                           }
                           break;
                         case sortType.album:
                           if (ascend) {
-                            _songs.sort((a,b) => a.album.compareTo(b.album));
+                            _songsSortable.sort((a,b) => a.album.compareTo(b.album));
                           } else {
-                            _songs.sort((a,b) => b.album.compareTo(a.album));
+                            _songsSortable.sort((a,b) => b.album.compareTo(a.album));
                           }
                           break;
                         case sortType.artist:
                           if (ascend) {
-                            _songs.sort((a,b) => a.artist.compareTo(b.artist));
+                            _songsSortable.sort((a,b) => a.artist.compareTo(b.artist));
                           } else {
-                            _songs.sort((a,b) => b.artist.compareTo(a.artist));
+                            _songsSortable.sort((a,b) => b.artist.compareTo(a.artist));
                           }
                           break;
                         case sortType.date:
                           if (ascend) {
-                            _songs.sort((a,b) => a.extras['date'].compareTo(b.extras['date']));
+                            _songsSortable.sort((a,b) => a.extras['date'].compareTo(b.extras['date']));
                           } else {
-                            _songs.sort((a,b) => b.extras['date'].compareTo(a.extras['date']));
+                            _songsSortable.sort((a,b) => b.extras['date'].compareTo(a.extras['date']));
                           }
                           break;
                         default:
                       }
                       setState(() {
-                        _songs = _songs;
+                        _songsSortable = _songsSortable;
                       });
                       lastSort = result;
                     },
                   )
                 ],
               ),
-              Expanded(child: Padding(padding: EdgeInsets.only(bottom: 76),child: Scrollbar(child: SongList(songs: _songs))))
+              Expanded(child: Padding(padding: EdgeInsets.only(bottom: 76),child: Scrollbar(child: SongList(songs: _songsSortable))))
             ],
           ),
         );
@@ -309,6 +307,7 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
         songsHistory = songsJson.map<MediaItem>((song) => MediaItem.fromJson(song)).toList();
         setState(() {
           _songs = songsHistory;
+          _songsSortable = List<MediaItem>.from(songsHistory);
         });
       } 
       if (await artistFile.exists()) {
@@ -358,6 +357,7 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
       log('not equal');
       setState(() {
         _songs = current;
+        _songsSortable = List<MediaItem>.from(current);
         _artists = artists;
         _albums = albums;
       });

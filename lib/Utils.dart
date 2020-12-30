@@ -35,6 +35,12 @@ Image safeLoadImage(String artUri) {
   return image;
 }
 
+extension CustomMediaItem on MediaItem {
+  bool contains(String search) {
+    return this.title.toLowerCase().contains(search.toLowerCase()) || this.album.toLowerCase().contains(search.toLowerCase()) || this.artist.toLowerCase().contains(search.toLowerCase());
+  }
+}
+
 extension CustomSongInfo on SongInfo {
   Map<String, dynamic> toMap() {
     final song = this;

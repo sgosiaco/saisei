@@ -89,12 +89,13 @@ class ArtInfo extends StatelessWidget {
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: FittedBox(fit: BoxFit.contain, alignment: Alignment.center, child: Container(alignment: Alignment.center, width: 200, height: 200, child: image))
                 )
               ),
-              Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.all(10)), //Theme.of(context).textTheme.headline6
-              Container(child: Text(metadata?.album ?? '', style: TextStyle(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center), padding: EdgeInsets.fromLTRB(10, 0, 10, 10))
+              Container(child: Text(metadata?.title ?? '', style: TextStyle(color: Colors.white, fontSize: Theme.of(context).textTheme.headline6.fontSize), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,), padding: EdgeInsets.fromLTRB(10, 0, 10, 10)), //Theme.of(context).textTheme.headline6
+              Container(child: Text(metadata?.album ?? '', style: TextStyle(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center), padding: EdgeInsets.fromLTRB(10, 0, 10, 10)),
+              Container(child: Text(metadata?.artist ?? '', style: TextStyle(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center), padding: EdgeInsets.fromLTRB(10, 0, 10, 10))
             ]
           );
         }
