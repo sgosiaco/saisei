@@ -6,28 +6,53 @@ import 'package:saisei/AlbumArt.dart';
 import 'package:saisei/AlbumList.dart';
 import 'package:saisei/Utils.dart';
 
-class ArtistList extends StatelessWidget {
+class ArtistList extends StatefulWidget {
   final List<MediaItem> songs;
   final List<ArtistItem> artists;
   final ScrollController controller;
+
   ArtistList({@required this.songs, @required this.artists, this.controller,});
 
   @override
+  _ArtistListState createState() => _ArtistListState();
+}
+
+class _ArtistListState extends State<ArtistList> {
+  bool showArtists = true;
+  Widget child;
+
+  @override
   Widget build(BuildContext context) {
+    return showArtists ? _buildArtistList(context) : child;
+  }
+
+  Widget _buildArtistList(BuildContext context) {
     return ListView.builder(
-      controller: controller,
+      controller: this.widget.controller,
       shrinkWrap: true,
       scrollDirection: Axis.vertical,
       padding: EdgeInsets.all(10),
-      itemCount: (artists.length) * 2, // need to be *2 because adding dividers
+      itemCount: (this.widget.artists.length) * 2, // need to be *2 because adding dividers
       itemBuilder: (BuildContext context, int idx) {
         if (idx.isOdd) {
           return Divider();
         }
         var index = idx ~/ 2;
-        return ArtistTile(songs: songs, artists: artists, index: index, controller: controller);
+        return ArtistTile(songs: this.widget.songs, artists: this.widget.artists, index: index, controller: this.widget.controller, swap: swapView,);
       }
     );
+  }
+
+  void swapView(Widget swap) {
+    setState(() {
+      child = swap;
+      if (swap == null) {
+        showArtists = true;
+      } else {
+        showArtists = false;
+      }
+    });
+    
   }
 }
 
@@ -36,7 +61,8 @@ class ArtistTile extends StatelessWidget {
   final List<ArtistItem> artists;
   final index;
   final ScrollController controller;
-  ArtistTile({@required this.songs, @required this.artists, @required this.index, this.controller});
+  final Function(Widget) swap;
+  ArtistTile({@required this.songs, @required this.artists, @required this.index, this.controller, this.swap});
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +78,19 @@ class ArtistTile extends StatelessWidget {
         style: TextStyle(fontSize: 12.0)
       ),
       onTap: ()  {
-        Navigator.push(
-          context, 
-          MaterialPageRoute(
-            builder: (context) {
-              return SafeArea(child: Scrollbar(child: Scaffold(body: AlbumList(songs: songs, albums: artist.albums, pop: true))));
-            }
+        swap(
+          WillPopScope(
+            onWillPop: () {
+              swap(null);
+              return Future.value(false);
+            },
+            child: SafeArea(
+              child: Scrollbar(
+                child: Scaffold(
+                  body: AlbumList(songs: songs, albums: artist.albums, pop: true)
+                )
+              )
+            )
           )
         );
       },
