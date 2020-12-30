@@ -63,6 +63,8 @@ class Player extends StatefulWidget {
   }
 }
 
+enum sortType { title, album, artist, date }
+
 class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   final _audioQuery = FlutterAudioQuery();
   List<MediaItem> _songs;
@@ -77,6 +79,9 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   TabController _tabController;
   final GlobalKey<NavigatorState> albumKey = GlobalKey<NavigatorState>();
   final GlobalKey<NavigatorState> artistKey = GlobalKey<NavigatorState>();
+  sortType lastSort;
+  bool ascend = true;
+
 
   @override
   void initState() {
@@ -197,14 +202,69 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
                   },
                 ),
                 actions: [
-                  IconButton(
+                  PopupMenuButton<sortType>(
                     icon: Icon(Icons.sort), 
-                    onPressed: () async {
-                      log('Sorting');
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<sortType>(
+                        value: sortType.title,
+                        child: Text('Title')
+                      ),
+                      const PopupMenuItem<sortType>(
+                        value: sortType.album,
+                        child: Text('Album')
+                      ),
+                      const PopupMenuItem<sortType>(
+                        value: sortType.artist,
+                        child: Text('Artist')
+                      ),
+                      const PopupMenuItem<sortType>(
+                        value: sortType.date,
+                        child: Text('Date')
+                      )
+                    ],
+                    onSelected: (sortType result) {
+                      if (lastSort == result) {
+                        ascend = !ascend;
+                      } else {
+                        ascend = true;
+                      }
+                      switch (result) {
+                        case sortType.title:
+                          if (ascend) {
+                            _songs.sort((a,b) => a.title.compareTo(b.title));
+                          } else {
+                            _songs.sort((a,b) => b.title.compareTo(a.title));
+                          }
+                          break;
+                        case sortType.album:
+                          if (ascend) {
+                            _songs.sort((a,b) => a.album.compareTo(b.album));
+                          } else {
+                            _songs.sort((a,b) => b.album.compareTo(a.album));
+                          }
+                          break;
+                        case sortType.artist:
+                          if (ascend) {
+                            _songs.sort((a,b) => a.artist.compareTo(b.artist));
+                          } else {
+                            _songs.sort((a,b) => b.artist.compareTo(a.artist));
+                          }
+                          break;
+                        case sortType.date:
+                          if (ascend) {
+                            _songs.sort((a,b) => a.extras['date'].compareTo(b.extras['date']));
+                          } else {
+                            _songs.sort((a,b) => b.extras['date'].compareTo(a.extras['date']));
+                          }
+                          break;
+                        default:
+                      }
                       setState(() {
-                        _songs = _songs..sort((a,b) => a.title.compareTo(b.title));
+                        _songs = _songs;
                       });
-                    })
+                      lastSort = result;
+                    },
+                  )
                 ],
               ),
               Expanded(child: Padding(padding: EdgeInsets.only(bottom: 76),child: Scrollbar(child: SongList(songs: _songs))))
@@ -322,6 +382,9 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
       final songsCurrent = (msg[0]['songsCurrent'] as List<Map<String, dynamic>>).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
       final songsHistory = (msg[0]['songsHistory'] as List);
       songsCurrent.sort((a,b) => File(b['extras']['uri']).lastModifiedSync().compareTo(File(a['extras']['uri']).lastModifiedSync()));
+      for (int i = 0; i < songsCurrent.length; i++) {
+        songsCurrent[i]['extras']['date'] = i;
+      }
       final songsEqual = songsCurrent.toString() == songsHistory.toString();
       // generating album/artist maps
       final albumMap = HashMap<String, AlbumItem>();

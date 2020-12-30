@@ -23,7 +23,7 @@ class AlbumArt extends StatelessWidget {
             if (snapshot.data.length > 0) {
               return Image.memory(snapshot.data);
             } else {
-              return Image(image: AssetImage('assets/default.jpg'));
+              return Image(image: AssetImage('assets/default.png'));
             }
           }
           return CircularProgressIndicator();
@@ -32,12 +32,12 @@ class AlbumArt extends StatelessWidget {
     } else {
       final Uint8List art = AlbumArtMap().getAlbumArt(type: type, id: id);
       if (art == null) {
-        return Image(image: AssetImage('assets/default.jpg'));
+        return Image(image: AssetImage('assets/default.png'));
       } else {
         if (art.length > 0) {
           return Image.memory(art);
         } else {
-          return Image(image: AssetImage('assets/default.jpg'));
+          return Image(image: AssetImage('assets/default.png'));
         }
       }
     }
