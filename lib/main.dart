@@ -144,21 +144,27 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
             controller: _tabController,
             children: [
               _buildPlayer(),
-              Navigator(
-                key: artistKey,
-                onGenerateRoute: (RouteSettings settings) {
-                  return MaterialPageRoute(builder: (context) {
-                    return ArtistList(songs: _songs ?? [], artists: _artists ?? []);
-                  });
-                },
+              Padding(
+                padding: EdgeInsets.only(bottom: 76),
+                child: Navigator(
+                  key: artistKey,
+                  onGenerateRoute: (RouteSettings settings) {
+                    return MaterialPageRoute(builder: (context) {
+                      return Scrollbar(child: ArtistList(songs: _songs ?? [], artists: _artists ?? []));
+                    });
+                  },
+                )
               ),
-              Navigator(
-                key: albumKey,
-                onGenerateRoute: (RouteSettings settings) {
-                  return MaterialPageRoute(builder: (context) {
-                    return AlbumList(songs: _songs ?? [], albums: _albums ?? []);
-                  });
-                },
+              Padding(
+                padding: EdgeInsets.only(bottom: 76),
+                child: Navigator(
+                  key: albumKey,
+                  onGenerateRoute: (RouteSettings settings) {
+                    return MaterialPageRoute(builder: (context) {
+                      return AlbumList(songs: _songs ?? [], albums: _albums ?? []);
+                    });
+                  },
+                )
               )
             ],
           )
