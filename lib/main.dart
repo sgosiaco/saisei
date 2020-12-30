@@ -63,90 +63,98 @@ class Player extends StatefulWidget {
   }
 }
 
-class _PlayerState extends State<Player> {
+class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
   final _audioQuery = FlutterAudioQuery();
   List<MediaItem> _songs;
   List<ArtistItem> _artists;
   List<AlbumItem> _albums;
   Isolate _loader;
-  static final GlobalKey<NavigatorState> _albumKey = GlobalKey(debugLabel: 'albumKey');
-  static final GlobalKey<NavigatorState> _artistKey = GlobalKey(debugLabel: 'artistKey');
+  final List<Tab> _tabs = [
+    Tab(text: 'Songs'),
+    Tab(text: 'Artists'),
+    Tab(text: 'Albums'),
+  ];
+  TabController _tabController;
+  final GlobalKey<NavigatorState> albumKey = GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> artistKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(vsync: this, length: _tabs.length);
     startAudioService();
     loadSongs();
   }
 
   @override
   void dispose() {
-    super.dispose();
+    _tabController.dispose();
     AudioService.stop();
     _loader.kill();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          appBar: AppBar(
-            flexibleSpace: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TabBar(
-                  tabs: [
-                    Tab(text: 'Songs'),
-                    Tab(text: 'Artists'),
-                    Tab(text: 'Albums'),
-                  ],
-                ),
-              ],
-            )
-          ), 
-          body: TabBarView(
+      child: Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TabBar(
+                controller: _tabController,
+                tabs: _tabs,
+              ),
+            ],
+          )
+        ), 
+        body:  WillPopScope(
+          onWillPop: () async {
+            log('${_tabController.index}');
+            switch (_tabController.index) {
+              case 1:
+                if (artistKey.currentState.canPop()) {
+                  artistKey.currentState.pop();
+                } else {
+                  _tabController.animateTo(0);
+                }
+                break;
+              case 2:
+                if (albumKey.currentState.canPop()) {
+                  albumKey.currentState.pop();
+                } else {
+                  _tabController.animateTo(0);
+                }
+                break;
+              default:
+            }
+            return false;
+          },
+          child: TabBarView(
+            controller: _tabController,
             children: [
               _buildPlayer(),
-              WillPopScope(
-                onWillPop: () async {
-                  if (_artistKey.currentState.canPop()) {
-                    _artistKey.currentState.pop();
-                    return false;
-                  }
-                  return true;
+              Navigator(
+                key: artistKey,
+                onGenerateRoute: (RouteSettings settings) {
+                  return MaterialPageRoute(builder: (context) {
+                    return ArtistList(songs: _songs ?? [], artists: _artists ?? []);
+                  });
                 },
-                child: Navigator(
-                  key: _artistKey,
-                  onGenerateRoute: (RouteSettings settings) {
-                    return MaterialPageRoute(builder: (context) {
-                      return ArtistList(songs: _songs ?? [], artists: _artists ?? []);
-                    });
-                  },
-                )
               ),
-              WillPopScope(
-                onWillPop: () async {
-                  if (_albumKey.currentState.canPop()) {
-                    _albumKey.currentState.pop();
-                    return false;
-                  }
-                  return true;
+              Navigator(
+                key: albumKey,
+                onGenerateRoute: (RouteSettings settings) {
+                  return MaterialPageRoute(builder: (context) {
+                    return AlbumList(songs: _songs ?? [], albums: _albums ?? []);
+                  });
                 },
-                child: Navigator(
-                  key: _albumKey,
-                  onGenerateRoute: (RouteSettings settings) {
-                    return MaterialPageRoute(builder: (context) {
-                      return AlbumList(songs: _songs ?? [], albums: _albums ?? []);
-                    });
-                  },
-                )
               )
             ],
-          ),
-          bottomSheet: ControlSheet() 
-        )
+          )
+        ),
+        bottomSheet: ControlSheet() 
       )
     );
   }
