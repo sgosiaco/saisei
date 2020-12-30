@@ -10,7 +10,7 @@ class ArtistList extends StatelessWidget {
   final List<MediaItem> songs;
   final List<ArtistItem> artists;
   final ScrollController controller;
-  ArtistList({@required this.songs, @required this.artists, this.controller,});
+  ArtistList({@required this.songs, @required this.artists, this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +56,7 @@ class ArtistTile extends StatelessWidget {
           context, 
           MaterialPageRoute(
             builder: (context) {
-              return SafeArea(child: Scrollbar(child: Scaffold(body: AlbumList(songs: songs, albums: artist.albums, pop: true))));
+              return SafeArea(child: Scrollbar(child: Scaffold(body: AlbumList(songs: songs, albums: artist.albums))));
             }
           )
         );

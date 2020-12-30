@@ -14,7 +14,7 @@ import 'package:saisei/AlbumList.dart';
 import 'package:saisei/ArtistList.dart';
 import 'package:saisei/AudioPlayerTask.dart';
 import 'package:saisei/ControlSheet.dart';
-import 'package:saisei/RadioPlayer.dart';
+import 'package:saisei/MiniNavigator.dart';
 import 'package:saisei/SongList.dart';
 import 'package:saisei/Utils.dart';
 
@@ -69,6 +69,8 @@ class _PlayerState extends State<Player> {
   List<ArtistItem> _artists;
   List<AlbumItem> _albums;
   Isolate _loader;
+  static final GlobalKey<NavigatorState> _albumKey = GlobalKey(debugLabel: 'albumKey');
+  static final GlobalKey<NavigatorState> _artistKey = GlobalKey(debugLabel: 'artistKey');
 
   @override
   void initState() {
@@ -107,8 +109,40 @@ class _PlayerState extends State<Player> {
           body: TabBarView(
             children: [
               _buildPlayer(),
-              ArtistList(songs: _songs ?? [], artists: _artists ?? []),
-              AlbumList(songs: _songs ?? [], albums: _albums ?? [], pop: true),
+              WillPopScope(
+                onWillPop: () async {
+                  if (_artistKey.currentState.canPop()) {
+                    _artistKey.currentState.pop();
+                    return false;
+                  }
+                  return true;
+                },
+                child: Navigator(
+                  key: _artistKey,
+                  onGenerateRoute: (RouteSettings settings) {
+                    return MaterialPageRoute(builder: (context) {
+                      return ArtistList(songs: _songs ?? [], artists: _artists ?? []);
+                    });
+                  },
+                )
+              ),
+              WillPopScope(
+                onWillPop: () async {
+                  if (_albumKey.currentState.canPop()) {
+                    _albumKey.currentState.pop();
+                    return false;
+                  }
+                  return true;
+                },
+                child: Navigator(
+                  key: _albumKey,
+                  onGenerateRoute: (RouteSettings settings) {
+                    return MaterialPageRoute(builder: (context) {
+                      return AlbumList(songs: _songs ?? [], albums: _albums ?? []);
+                    });
+                  },
+                )
+              )
             ],
           ),
           bottomSheet: ControlSheet() 
