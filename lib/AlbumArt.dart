@@ -66,7 +66,7 @@ class AlbumArtMap {
   }
 
   Future<Uint8List> loadAlbumArt({type: ResourceType.SONG, id: ''}) async {
-    final Uint8List art = await _audioQuery.getArtwork(type: type, id: id);
+    final Uint8List art = await _audioQuery.getArtwork(type: type, id: id, size: Size(500, 500));
     return artMap[type].putIfAbsent(id, () => art);
   }
 

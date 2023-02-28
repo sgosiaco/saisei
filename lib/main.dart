@@ -385,7 +385,7 @@ class _PlayerState extends State<Player> with SingleTickerProviderStateMixin {
       log('ISOLATE RECEIVED');
       SendPort replyTo = msg[1];
       // receive songsHistory and songsCurrent, convert SongInfo to MediaItem, sort list by  dateModified and then check if equal
-      final songsCurrent = (msg[0]['songsCurrent'] as List<Map<String, dynamic>>).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
+      final songsCurrent = ((msg[0]['songsCurrent'] as List<Map<String, dynamic>>)..removeWhere((song) => song['duration'] == null)).map<Map<String, dynamic>>((song) => song.toMediaItem().toJson()).toList();
       final songsHistory = (msg[0]['songsHistory'] as List);
       songsCurrent.sort((a,b) => File(b['extras']['uri']).lastModifiedSync().compareTo(File(a['extras']['uri']).lastModifiedSync()));
       for (int i = 0; i < songsCurrent.length; i++) {
